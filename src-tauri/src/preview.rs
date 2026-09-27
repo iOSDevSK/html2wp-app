@@ -840,6 +840,7 @@ mod tests {
             "an orphan volume still needs owner proof"
         );
     }
+    #[cfg(not(windows))]
     #[test]
     fn legacy_requires_two_containers_with_the_canonical_host_state_path() {
         let (_dir, _id, _state, c, mut r) = fixture();
@@ -864,6 +865,23 @@ mod tests {
         r.containers[0]["Config"]["Labels"]["h2wp.state"] = json!(c.state_path);
         r.containers.pop();
         assert!(prove(&c, &r).is_err());
+    }
+    #[cfg(windows)]
+    #[test]
+    fn legacy_preview_without_owner_labels_is_not_trusted_on_windows() {
+        let (_dir, _id, _state, c, mut r) = fixture();
+        let daemon_state = format!("{}/workspace/{}", c.daemon_project,
+            c.state_path.file_name().unwrap().to_string_lossy());
+        for row in &mut r.containers {
+            row["Config"]["Labels"].as_object_mut().unwrap().remove("h2wp.owner");
+            row["Config"]["Labels"]["h2wp.state"] = json!(daemon_state);
+        }
+        for row in &mut r.volumes {
+            row["Labels"].as_object_mut().unwrap().remove("h2wp.owner");
+        }
+        r.networks[0]["Labels"].as_object_mut().unwrap().remove("h2wp.owner");
+        assert!(prove(&c, &r).err().is_some_and(|e|
+            e.contains("legacy preview has no unambiguous host ownership label")));
     }
     #[test]
     fn only_the_plugin_s_own_preview_on_this_computer_is_touched() {
