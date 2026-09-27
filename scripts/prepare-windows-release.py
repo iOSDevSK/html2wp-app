@@ -1,7 +1,8 @@
-"""Verify a signed Windows NSIS build and merge its updater entry with macOS.
+"""Verify a signed Windows NSIS build and stage its separate updater feed.
 
 Run against the artifact from the native Windows CI job. Upload the EXE and
-signature before replacing latest.json in the public binary release.
+signature before publishing windows-x86_64.json on the binary repo's updates
+branch. The stable macOS latest.json is never changed by a Windows preview.
 """
 import argparse
 import base64
@@ -16,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = json.loads((ROOT / 'package.json').read_text())['version']
 REPO = 'iOSDevSK/html2wp-desktop-releases'
+FEED = f'https://raw.githubusercontent.com/{REPO}/updates/windows-x86_64.json'
 
 
 def sha256(path):
@@ -30,8 +32,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--artifact-dir', required=True, type=Path,
                         help='Extracted Windows CI bundle/nsis directory')
-    parser.add_argument('--existing-latest', required=True, type=Path,
-                        help='latest.json from the public release of this SAME version')
     args = parser.parse_args()
     release = json.loads((ROOT / 'runtime/runtime-release.json').read_text())
     runtime = release['platforms']['x86_64']
@@ -48,6 +48,8 @@ def main():
     if installer.open('rb').read(2) != b'MZ':
         raise RuntimeError('Windows installer has no PE header')
     config = json.loads((ROOT / 'src-tauri/tauri.conf.json').read_text())
+    if config['version'] != VERSION or config['plugins']['updater']['endpoints'] != [FEED]:
+        raise RuntimeError('Windows updater must use this version and the isolated Windows feed')
     with tempfile.TemporaryDirectory() as directory:
         public = Path(directory) / 'updater.pub'
         sig = Path(directory) / 'updater.sig'
@@ -57,23 +59,21 @@ def main():
                                   check=True, capture_output=True, text=True)
         if f'version:{VERSION}' not in verified.stdout:
             raise RuntimeError('Updater signature does not bind this app version')
-    existing = json.loads(args.existing_latest.read_text())
-    if existing.get('version', '').removeprefix('v') != VERSION:
-        raise RuntimeError('The existing updater release has a different version')
-    mac = existing.get('platforms', {}).get('darwin-aarch64')
-    if not isinstance(mac, dict) or not mac.get('url') or not mac.get('signature'):
-        raise RuntimeError('Existing macOS updater entry must be preserved')
-    out = ROOT / 'release-assets' / f'{VERSION}-windows'
+    out = ROOT / 'release-assets' / f'{VERSION}-windows-preview'
     out.mkdir(parents=True, exist_ok=True)
     for item in (installer, signature):
         shutil.copy2(item, out / item.name)
-    existing['platforms']['windows-x86_64'] = {
-        'url': f'https://github.com/{REPO}/releases/download/v{VERSION}/{installer.name}',
-        'signature': signature.read_text().strip(),
+    feed = {
+        'version': VERSION,
+        'notes': 'Windows Preview: native build and tests passed. Docker Desktop conversion and updater installation still need a Windows smoke test.',
+        'platforms': {'windows-x86_64': {
+            'url': f'https://github.com/{REPO}/releases/download/v{VERSION}/{installer.name}',
+            'signature': signature.read_text().strip(),
+        }},
     }
-    (out / 'latest.json').write_text(json.dumps(existing, indent=2) + '\n')
+    (out / 'windows-x86_64.json').write_text(json.dumps(feed, indent=2) + '\n')
     (out / 'SHA256SUMS.windows').write_text(''.join(
-        f'{sha256(out / name)}  {name}\n' for name in (installer.name, signature.name, 'latest.json')))
+        f'{sha256(out / name)}  {name}\n' for name in (installer.name, signature.name, 'windows-x86_64.json')))
     print(f'Staged verified Windows installer and merged updater manifest in {out}')
 
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "html2wp",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "identifier": "dev.html2wp.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -66,7 +66,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlERTNDM0ZBQTY5NUY4RTEKUldUaCtKV20rc1BqbllRazErZFRseXJZTWtHK3pSS2VCMGlMWFRKWm4yY3U0VlRWV3d2bVI2dXcK",
       "endpoints": [
-        "https://github.com/iOSDevSK/html2wp-desktop-releases/releases/latest/download/latest.json"
+        "https://raw.githubusercontent.com/iOSDevSK/html2wp-desktop-releases/updates/windows-x86_64.json"
       ]
     }
   }

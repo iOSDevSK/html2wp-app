@@ -4,7 +4,7 @@ Tauri 2 desktop application with a React interface, a Rust host and Codex App Se
 
 This is the desktop app's [source repository](https://github.com/iOSDevSK/html2wp-app). `main` carries shared code; `macos`, `windows` and `linux` are platform development branches. A branch does not imply that its native build has been validated.
 
-**Current desktop release: 1.0.16.** The contract with the plugin is the plugin's `docs/APP-CONTRACT.md`.
+**macOS stable: 1.0.16 · Windows Preview: 1.0.17.** The contract with the plugin is the plugin's `docs/APP-CONTRACT.md`.
 
 ## Licence
 
@@ -75,7 +75,7 @@ python3 scripts/prepare-desktop-release.py
 
 The preparation script checks that the published runtime digest is embedded, the app and updater archive contain no Docker image, and both are below 200 MB. It stages the DMG, signed `.app.tar.gz`, signature, `latest.json`, checksums and dependency inventory under `release-assets/<version>/`. Publish these files in the public binary-only [desktop releases repository](https://github.com/iOSDevSK/html2wp-desktop-releases); the desktop source repository is public under its own commercial source-available licence. Existing pre-updater installations need one manual DMG installation. See [automatic setup](docs/automatic-setup.md) for the update and Docker Hub flow.
 
-For Windows, download the signed NSIS artifact from the native `Windows x64` workflow, then run `scripts/prepare-windows-release.py --artifact-dir <downloaded-nsis-directory> --existing-latest <latest.json-from-the-same-version-release>`. Upload the EXE and `.exe.sig` before replacing `latest.json` in the binary release. The merged updater manifest preserves `darwin-aarch64` and adds `windows-x86_64`; the preparation script verifies the signature and pinned x64 runtime.
+For Windows Preview, download the signed NSIS artifact from the native `Windows x64` workflow, then run `scripts/prepare-windows-release.py --artifact-dir <downloaded-nsis-directory>`. Publish the EXE and `.exe.sig` in a versioned prerelease before updating `windows-x86_64.json` on the binary repository's `updates` branch. The Windows app checks that separate HTTPS feed; macOS keeps its existing stable `latest.json`. The preparation script verifies the signature and pinned x64 runtime.
 
 If `~/.ssh/github` exists, the publisher uses it as the dedicated SSH identity. Its matching `~/.ssh/github.pub` is the public key registered with GitHub; the `.pub` file alone cannot authenticate a push. Run `gh auth login --hostname github.com` before publishing if `gh auth status --active --hostname github.com` reports an invalid token.
 

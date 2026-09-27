@@ -35,7 +35,7 @@ rustup override set stable-x86_64-pc-windows-msvc
 Rozbaľ celý ZIP napríklad do `C:\dev`. Otvor adresár, v ktorom je `package.json` a `build-windows.cmd`:
 
 ```powershell
-cd C:\dev\html2wp-windows-source-1.0.16
+cd C:\dev\html2wp-windows-source-1.0.17
 .\build-windows.cmd
 ```
 
@@ -88,6 +88,8 @@ V aplikácii otvor **Settings → Check environment → Prepare environment → 
 ZIP je snapshot zdrojov bez histórie `.git`. Obsahuje `.gitmodules`, GitHub Actions a zdroje pripnutých submodulov. Na build zo ZIPu nemusíš inicializovať Git ani sťahovať plugin zvlášť.
 
 Pre ďalší vývoj klonuj [zdrojový repozitár](https://github.com/iOSDevSK/html2wp-app) s `--recurse-submodules` a vyber vetvu `windows`. Workflow `Windows x64` na tejto vetve zostaví a otestuje natívny Windows NSIS inštalátor vrátane Tauri updater podpisu. Samotný podpis updatera nezaručuje podpis Windows Authenticode ani odstránenie SmartScreen upozornenia.
+
+Windows Preview používa samostatný podpísaný aktualizačný feed `windows-x86_64.json` na vetve `updates` v repozitári binárnych vydaní. Stabilný macOS feed tým zostáva nedotknutý.
 
 Pôvodná licencia pluginu je vo `vendor/html2wp/LICENSE`; licencie závislostí sú v `notices/`. Podrobnosti o ich zbere sú v `docs/desktop-licensing.md`. `SOURCE-MANIFEST.json` v ZIPe obsahuje SHA-256 každého pribaleného súboru.
 
