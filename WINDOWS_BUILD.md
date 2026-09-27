@@ -89,7 +89,7 @@ ZIP je snapshot zdrojov bez histórie `.git`. Obsahuje `.gitmodules`, GitHub Act
 
 Pre ďalší vývoj klonuj [zdrojový repozitár](https://github.com/iOSDevSK/html2wp-app) s `--recurse-submodules` a vyber vetvu `windows`. Workflow `Windows x64` na tejto vetve zostaví a otestuje natívny Windows NSIS inštalátor vrátane Tauri updater podpisu. Samotný podpis updatera nezaručuje podpis Windows Authenticode ani odstránenie SmartScreen upozornenia.
 
-Windows Preview používa samostatný podpísaný aktualizačný feed `windows-x86_64.json` na vetve `updates` v repozitári binárnych vydaní. Stabilný macOS feed tým zostáva nedotknutý.
+Windows Preview používa samostatný aktualizačný feed `windows-x86_64.json` s podpísanými inštalátormi na vetve `updates` v repozitári binárnych vydaní. Stabilný macOS feed tým zostáva nedotknutý.
 
 Pôvodná licencia pluginu je vo `vendor/html2wp/LICENSE`; licencie závislostí sú v `notices/`. Podrobnosti o ich zbere sú v `docs/desktop-licensing.md`. `SOURCE-MANIFEST.json` v ZIPe obsahuje SHA-256 každého pribaleného súboru.
 

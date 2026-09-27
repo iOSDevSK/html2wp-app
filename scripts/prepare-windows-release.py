@@ -74,7 +74,7 @@ def main():
     (out / 'windows-x86_64.json').write_text(json.dumps(feed, indent=2) + '\n')
     (out / 'SHA256SUMS.windows').write_text(''.join(
         f'{sha256(out / name)}  {name}\n' for name in (installer.name, signature.name, 'windows-x86_64.json')))
-    print(f'Staged verified Windows installer and merged updater manifest in {out}')
+    print(f'Staged verified Windows installer and isolated updater feed in {out}')
 
 
 if __name__ == '__main__':
