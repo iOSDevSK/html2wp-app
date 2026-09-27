@@ -161,6 +161,18 @@ pub(crate) fn under_work(work: &Path, path: &Path, dir: bool) -> bool {
     let real = kind.is_ok_and(|k| !k.is_symlink() && if dir { k.is_dir() } else { k.is_file() });
     real && matches!((std::fs::canonicalize(work), std::fs::canonicalize(path)), (Ok(root), Ok(found)) if found.starts_with(&root))
 }
+/// Translate a native file below the work folder to the Linux sandbox path.
+/// `Path::join("/work")` cannot be used here: Windows treats that as a path on
+/// the current drive and inserts backslashes into the container command.
+pub(crate) fn sandbox_path(work: &Path, path: &Path) -> Option<String> {
+    let rel = path.strip_prefix(work).ok()?;
+    let parts = rel.components().map(|part| match part {
+        std::path::Component::Normal(name) => name.to_str().filter(|s|
+            !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || "-_.".contains(c))),
+        _ => None,
+    }).collect::<Option<Vec<_>>>()?;
+    (!parts.is_empty()).then(|| format!("/work/{}", parts.join("/")))
+}
 /// A file of /work as it is, never through a link.
 fn read_work(work: &Path, name: &str) -> Option<Vec<u8>> {
     let path = work.join(name);

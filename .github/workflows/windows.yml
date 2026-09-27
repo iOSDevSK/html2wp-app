@@ -31,7 +31,10 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
-      - run: npm run bundle:windows
+      - if: github.event_name == 'pull_request'
+        run: npm run bundle:windows:local
+      - if: github.event_name != 'pull_request'
+        run: npm run bundle:windows
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''

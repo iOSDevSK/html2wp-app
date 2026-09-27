@@ -76,13 +76,14 @@ pub fn originals(work: &Path) -> Option<(String, String)> {
     let config: Value = serde_json::from_slice(&std::fs::read(found.path()).ok()?).ok()?;
     let base = found.path().parent()?;
     let out = config["out"].as_str()?;
-    let out = if Path::new(out).is_absolute() { Path::new(out).strip_prefix("/work").ok().map(|r| work.join(r))? } else { base.join(out) };
-    let inside = |p: &Path| -> Option<String> {
-        let rel = p.strip_prefix(work).ok()?;
-        let s = Path::new("/work").join(rel).to_string_lossy().into_owned();
-        (!s.split('/').any(|c| c == "..") && s.chars().all(|c| c.is_ascii_alphanumeric() || "/-_.".contains(c))).then_some(s)
+    let out = if let Some(rel) = out.strip_prefix("/work/") {
+        work.join(rel)
+    } else if out.starts_with('/') || out.starts_with('\\') || Path::new(out).is_absolute() {
+        return None;
+    } else {
+        base.join(out)
     };
-    Some((inside(found.path())?, inside(&out)?))
+    Some((crate::h2g::sandbox_path(work, found.path())?, crate::h2g::sandbox_path(work, &out)?))
 }
 /// visual-diff.py's report lines: "  ok about   0.42% differing pixels  …", "  !! key  no converted page".
 pub fn parse(report: &str) -> Vec<(String, Option<f64>, String)> {

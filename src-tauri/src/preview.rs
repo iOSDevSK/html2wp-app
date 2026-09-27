@@ -649,7 +649,12 @@ mod tests {
         std::fs::create_dir(&workspace).unwrap();
         let id = uuid::Uuid::new_v4().to_string();
         let agent = format!("h2wpd-{id}-agent");
-        let owner = owner_identity(&workspace.canonicalize().unwrap(), &agent).unwrap();
+        let daemon_project = if cfg!(windows) {
+            format!("/run/desktop/mnt/host/c/h2wp-fixtures/{id}")
+        } else {
+            workspace.canonicalize().unwrap().parent().unwrap().to_string_lossy().into_owned()
+        };
+        let owner = owner_identity(Path::new(&format!("{daemon_project}/workspace")), &agent).unwrap();
         let project = "h2wp-maison-abcdef";
         let path = workspace.join(".test-env-maison.json");
         let value = json!({"slug":"maison","project":project,"owner":owner,"wpContainer":format!("{project}-wp-1"),
@@ -660,7 +665,7 @@ mod tests {
             value,
             modified: std::time::SystemTime::now(),
         };
-        let c = claim(&workspace, &id, &state).unwrap();
+        let c = claim_with_daemon(&workspace, &id, &state, Some(&daemon_project)).unwrap();
         let wp_id = "a".repeat(64);
         let db_id = "b".repeat(64);
         let agent_id = "c".repeat(64);

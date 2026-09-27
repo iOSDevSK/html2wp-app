@@ -301,7 +301,11 @@ async fn start_desktop() -> Result<()> {
     Ok(())
 }
 async fn ensure_docker(app: &AppHandle, state: &AppState, control: &Control) -> Result<()> {
-    if runtime::preflight(&state.image()).await["docker"] == true {
+    let checked = runtime::preflight(&state.image()).await;
+    if checked["platformMismatch"] == true {
+        return Err(checked["message"].as_str().unwrap_or("Select Linux containers in Docker Desktop").into());
+    }
+    if checked["docker"] == true {
         return Ok(());
     }
     if desktop_path().is_none() {
@@ -351,7 +355,11 @@ async fn ensure_docker(app: &AppHandle, state: &AppState, control: &Control) -> 
     let deadline = tokio::time::Instant::now() + Duration::from_secs(600);
     while tokio::time::Instant::now() < deadline {
         cancelled(control)?;
-        if runtime::preflight(&state.image()).await["docker"] == true {
+        let checked = runtime::preflight(&state.image()).await;
+        if checked["platformMismatch"] == true {
+            return Err(checked["message"].as_str().unwrap_or("Select Linux containers in Docker Desktop").into());
+        }
+        if checked["docker"] == true {
             return Ok(());
         }
         tokio::time::sleep(Duration::from_secs(3)).await;

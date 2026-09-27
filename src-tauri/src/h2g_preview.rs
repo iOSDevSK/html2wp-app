@@ -1,5 +1,5 @@
 //! The Gutenberg theme of a "Gutenberg from an HTML theme" project, on this
-//! Mac. The skill's own WordPress (scripts/wp-sandbox: PHP's built-in server
+//! computer. The skill's own WordPress (scripts/wp-sandbox: PHP's built-in server
 //! on SQLite, the converted block theme and its imported content) answers
 //! only inside the project's sandbox container, on the address its
 //! wp-config names (http://127.0.0.1:<port>). The app listens on that same
@@ -8,7 +8,7 @@
 //! unchanged and nothing is published. One such preview at a time.
 use crate::{model::*, store::Store};
 use serde_json::{json, Value};
-use std::{path::Path, sync::Mutex};
+use std::sync::Mutex;
 use tokio::io::AsyncWriteExt;
 
 /// The skill's sandbox login (wp-sandbox/setup.sh: user admin, ADMIN_PASSWORD's default).
@@ -29,9 +29,8 @@ pub fn sandbox(store: &Store, p: &Project) -> Option<(String, u16)> {
             && crate::h2g::under_work(&work, e.path(), false))?;
     let config = std::fs::read_to_string(found.path()).ok()?;
     let port = wp_home_port(&config)?;
-    let wordpress = found.path().parent()?.strip_prefix(&work).ok()?;
-    let inside = Path::new("/work").join(wordpress).to_string_lossy().into_owned();
-    inside.chars().all(|c| c.is_ascii_alphanumeric() || "/-_.".contains(c)).then_some((inside, port))
+    let inside = crate::h2g::sandbox_path(&work, found.path().parent()?)?;
+    Some((inside, port))
 }
 /// The port of wp-config's `define( 'WP_HOME', 'http://127.0.0.1:<port>' )`.
 pub fn wp_home_port(config: &str) -> Option<u16> {
@@ -70,7 +69,7 @@ pub async fn start(store: &Store, p: &Project, image: &str) -> Result<Value> {
     if running_for(&p.id) != Some(port) {
         stop_all();
         let listener = tokio::net::TcpListener::bind(("127.0.0.1", port)).await
-            .map_err(|_| format!("Port {port} on this Mac is in use by another program; this sandbox's WordPress is set up for it. Close that program and start the preview again."))?;
+            .map_err(|_| format!("Port {port} on this computer is in use by another program; this sandbox's WordPress is set up for it. Close that program and start the preview again."))?;
         let task = tokio::spawn(accept(listener, name, port));
         if let Ok(mut server) = SERVER.lock() { *server = Some(Running { project_id: p.id.clone(), port, task }); }
     }
@@ -82,7 +81,7 @@ async fn accept(listener: tokio::net::TcpListener, name: String, port: u16) {
         tokio::spawn(async move { let _ = carry(socket, &name, port).await; });
     }
 }
-/// One connection from this Mac to the sandbox's server, through the container.
+/// One connection from this computer to the sandbox's server, through the container.
 async fn carry(socket: tokio::net::TcpStream, name: &str, port: u16) -> Result<()> {
     let mut command = crate::runtime::docker_command()?;
     command.args(["exec", "-i", "--user", "1000:1000", name, "python3", "-u", "-c", BRIDGE, &port.to_string()])

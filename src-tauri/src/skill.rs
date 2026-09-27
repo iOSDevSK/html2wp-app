@@ -699,7 +699,7 @@ pub(crate) mod tests {
         let joined = args.join(" ");
         assert!(joined.contains("--user 1000:1000 --group-add 0") && joined.contains("no-new-privileges") && joined.contains(&format!("--workdir {host}")));
         let mounts: Vec<String> = args.iter().enumerate().filter(|(i, _)| *i > 0 && args[i - 1] == "--mount").map(|(_, m)| m.clone()).collect();
-        assert_eq!(mounts, [format!("type=bind,source={host},target={host}"), format!("type=bind,source={host}/input,target={host}/input,readonly"), format!("type=bind,source={host}/artifacts,target={host}/artifacts,readonly"),
+        assert_eq!(mounts, [format!("type=bind,source={host},target={host}"), format!("type=bind,source={},target={host}/input,readonly", Path::new(host).join("input").display()), format!("type=bind,source={},target={host}/artifacts,readonly", Path::new(host).join("artifacts").display()),
             "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock".into(), format!("type=bind,source={},target=/opt/html2wp,readonly", plugin.dir.display())], "the project at its own path (the host's Docker resolves the plugin's paths there), the owner's original and the app's copies read-only, the host's Docker for the plugin, the plugin read-only");
         assert!(joined.contains("--label dev.html2wp.plugin=4667c22") && joined.ends_with("img sleep infinity"));
         let env: Vec<&String> = args.iter().enumerate().filter(|(i, _)| *i > 0 && args[i - 1] == "--env").map(|(_, e)| e).collect();
@@ -708,6 +708,20 @@ pub(crate) mod tests {
             assert!(env.iter().any(|v| *v == e), "{e}");
         }
         assert!(!joined.contains(".codex") && !joined.contains("H2WP_KEY"), "no Codex account, and the licence is a private file, not the environment");
+    }
+    #[test]
+    fn windows_project_mount_keeps_native_source_and_linux_daemon_destination() {
+        let host = Path::new(r"C:\Users\Filip\AppData\Roaming\html2wp\projects\x");
+        let daemon = "/run/desktop/mnt/host/c/Users/Filip/AppData/Roaming/html2wp/projects/x";
+        let plugin = crate::plugin::Plugin { version: "1.0.0".into(), commit: "4667c22".into(), dir: host.join("plugin") };
+        let args = container_args_mapped("h2wpd-x-agent", "img", host, daemon, "html", &plugin);
+        let values = |flag: &str| args.windows(2).filter(|pair| pair[0] == flag).map(|pair| pair[1].as_str()).collect::<Vec<_>>();
+        assert_eq!(values("--workdir"), [daemon]);
+        assert!(values("--env").contains(&format!("TMPDIR={daemon}/.tmp").as_str()));
+        let mounts = values("--mount");
+        assert!(mounts.contains(&format!("type=bind,source={},target={daemon}", host.display()).as_str()));
+        assert!(mounts.contains(&format!("type=bind,source={},target={daemon}/input,readonly", host.join("input").display()).as_str()));
+        assert!(mounts.contains(&format!("type=bind,source={},target={daemon}/artifacts,readonly", host.join("artifacts").display()).as_str()));
     }
     #[test]
     fn the_prompts_are_the_contract_s_for_an_html_theme_and_an_astro_project() {

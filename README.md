@@ -59,7 +59,7 @@ npm run bundle:windows
 npm run tauri -- build --target x86_64-unknown-linux-gnu --bundles appimage,deb
 ```
 
-Build output is under `src-tauri/target/<target>/release/bundle/`. The **Desktop builds** workflow currently builds macOS ARM64. Windows and Linux have configuration, not completed validation in this workspace. macOS distributable signing/notarization requires the owner's Apple credentials; this local build is not notarized.
+Build output is under `src-tauri/target/<target>/release/bundle/`. The `windows` branch runs the native **Windows x64** workflow and produces a signed NSIS updater installer. The macOS ARM64 build uses its separate workflow; Linux still needs native validation. Windows end-to-end conversion and updater installation need a smoke test on a Windows computer with Docker Desktop. macOS distributable signing/notarization requires the owner's Apple credentials; this local build is not notarized.
 
 ## Version and GitHub release
 
@@ -74,6 +74,8 @@ python3 scripts/prepare-desktop-release.py
 ```
 
 The preparation script checks that the published runtime digest is embedded, the app and updater archive contain no Docker image, and both are below 200 MB. It stages the DMG, signed `.app.tar.gz`, signature, `latest.json`, checksums and dependency inventory under `release-assets/<version>/`. Publish these files in the public binary-only [desktop releases repository](https://github.com/iOSDevSK/html2wp-desktop-releases); the desktop source repository is public under its own commercial source-available licence. Existing pre-updater installations need one manual DMG installation. See [automatic setup](docs/automatic-setup.md) for the update and Docker Hub flow.
+
+For Windows, download the signed NSIS artifact from the native `Windows x64` workflow, then run `scripts/prepare-windows-release.py --artifact-dir <downloaded-nsis-directory> --existing-latest <latest.json-from-the-same-version-release>`. Upload the EXE and `.exe.sig` before replacing `latest.json` in the binary release. The merged updater manifest preserves `darwin-aarch64` and adds `windows-x86_64`; the preparation script verifies the signature and pinned x64 runtime.
 
 If `~/.ssh/github` exists, the publisher uses it as the dedicated SSH identity. Its matching `~/.ssh/github.pub` is the public key registered with GitHub; the `.pub` file alone cannot authenticate a push. Run `gh auth login --hostname github.com` before publishing if `gh auth status --active --hostname github.com` reports an invalid token.
 

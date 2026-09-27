@@ -52,13 +52,35 @@ impl ProjectPaths {
         if !cfg!(windows) { return Ok(()); }
         let nonce = format!("path-proof-{}", uuid::Uuid::new_v4());
         let file = self.host.join(".tmp").join(&nonce);
+        let write_file = self.host.join(".tmp").join(format!("{nonce}-write"));
         std::fs::write(&file, nonce.as_bytes()).map_err(err)?;
         let result = async {
+            let mounts_raw = runtime::docker(&[
+                "inspect".into(), "--format".into(), "{{json .Mounts}}".into(), agent.into(),
+            ], None, 20).await?;
+            let mounts: Value = serde_json::from_str(mounts_raw.trim()).map_err(err)?;
+            let mounts = mounts.as_array().ok_or("Docker returned no agent mounts")?;
+            let expected = |destination: &str, writable: bool| mounts.iter().any(|m|
+                m["Type"] == "bind" && m["Destination"] == destination
+                    && m["Source"] == destination && m["RW"] == writable);
+            if !expected(&self.daemon, true)
+                || !expected(&format!("{}/input", self.daemon), false)
+                || !expected(&format!("{}/artifacts", self.daemon), false) {
+                return Err("Docker did not preserve the project's writable and read-only mounts".into());
+            }
             let path = format!("{}/.tmp/{nonce}", self.daemon);
             let direct = runtime::docker(&[
                 "exec".into(), agent.into(), "cat".into(), path,
             ], None, 20).await?;
             if direct != nonce { return Err("The conversion container cannot read this project's files".into()); }
+            runtime::docker(&[
+                "exec".into(), agent.into(), "sh".into(), "-c".into(),
+                "printf '%s' \"$1\" > \"$2\"".into(), "sh".into(), nonce.clone(),
+                format!("{}/.tmp/{nonce}-write", self.daemon),
+            ], None, 20).await?;
+            if std::fs::read(&write_file).map_err(err)? != nonce.as_bytes() {
+                return Err("The conversion container cannot write this project's scratch files".into());
+            }
             let nested = runtime::docker(&[
                 "exec".into(), agent.into(), "docker".into(), "run".into(), "--rm".into(),
                 "--network".into(), "none".into(), "--mount".into(),
@@ -69,6 +91,7 @@ impl ProjectPaths {
             Ok(())
         }.await;
         let _ = std::fs::remove_file(file);
+        let _ = std::fs::remove_file(write_file);
         result
     }
 }
