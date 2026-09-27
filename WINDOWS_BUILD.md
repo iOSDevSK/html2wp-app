@@ -35,7 +35,7 @@ rustup override set stable-x86_64-pc-windows-msvc
 Rozbaľ celý ZIP napríklad do `C:\dev`. Otvor adresár, v ktorom je `package.json` a `build-windows.cmd`:
 
 ```powershell
-cd C:\dev\html2wp-windows-source-1.0.15
+cd C:\dev\html2wp-windows-source-1.0.16
 .\build-windows.cmd
 ```
 
@@ -69,7 +69,7 @@ Na inštaláciu používaj výsledný setup EXE. Docker runtime image nie je v E
 
 ## 4. Spustenie a konverzia
 
-Samotný build zdrojov nepotrebuje Docker, Python ani prihlásenie do Codexu. Verzia 1.0.15 má v `runtime/runtime-release.json` pripnutý image pre ARM64. Windows x64 inštalátor preto **zatiaľ nie je použiteľným vydaním na konverziu**; pred distribúciou treba publikovať a pripnúť kompatibilný Linux AMD64 runtime image, potom otestovať prípravu prostredia a konverziu na čistom Windows. Zdrojový ZIP neobsahuje runtime image.
+Samotný build zdrojov nepotrebuje Docker, Python ani prihlásenie do Codexu. Verzia 1.0.16 má v `runtime/runtime-release.json` pripnutý image pre ARM64. Windows x64 inštalátor preto **zatiaľ nie je použiteľným vydaním na konverziu**; pred distribúciou treba publikovať a pripnúť kompatibilný Linux AMD64 runtime image, potom otestovať prípravu prostredia a konverziu na čistom Windows. Zdrojový ZIP neobsahuje runtime image.
 
 Po príprave kompatibilného runtime image tlačidlo **Prepare environment** stiahne alebo spustí Docker Desktop a pripraví kontajnery. Používateľ potvrdí systémové oprávnenia a podmienky Dockeru. Windows môže vyžiadať WSL alebo reštart. Čistá Windows inštalácia zatiaľ nebola otestovaná; pozri [stav automatickej prípravy](docs/automatic-setup.md).
 

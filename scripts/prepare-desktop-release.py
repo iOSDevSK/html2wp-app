@@ -109,7 +109,7 @@ def main():
     for source, name in names.items():
         shutil.copy2(source, OUT / name)
     manifest = {'version': VERSION,
-                'notes': 'Preview controls now verify project ownership before changing Docker resources.',
+                'notes': 'Cloudflare Pages removal now shows one clear action instead of a duplicate label.',
                 'platforms': {'darwin-aarch64': {
                     'url': f'https://github.com/{REPO}/releases/download/v{VERSION}/{ARCHIVE.name}',
                     'signature': SIGNATURE.read_text().strip()}}}

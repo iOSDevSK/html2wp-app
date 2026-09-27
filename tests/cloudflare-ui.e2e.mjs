@@ -132,6 +132,7 @@ test('deploy a converted site to Cloudflare Pages',async({page})=>{
  await expect(panel.locator('.cf-stages li.current')).toHaveText('Upload the site');
  await page.evaluate(()=>window.cf.finishDeploy());
  await expect(panel.getByText('Your site is live.')).toBeVisible();
+ await expect(panel.getByText('Remove from Cloudflare Pages',{exact:true})).toHaveCount(1);
  const call=await page.evaluate(()=>window.cf.calls.filter(c=>c.command==='cloudflare_deploy').at(-1).args);
  expect(call).toEqual({projectId:'fixture',projectName:'kaviaren-web',domain:'www.kaviaren.sk',accountId:ACCOUNT_B,replaceExisting:true});
  await expect(panel.getByText('www.kaviaren.sk is waiting for DNS')).toBeVisible();

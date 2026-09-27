@@ -4,7 +4,7 @@ Tauri 2 desktop application with a React interface, a Rust host and Codex App Se
 
 This is the desktop app's [source repository](https://github.com/iOSDevSK/html2wp-app). `main` carries shared code; `macos`, `windows` and `linux` are platform development branches. A branch does not imply that its native build has been validated.
 
-**Current desktop release: 1.0.15.** The contract with the plugin is the plugin's `docs/APP-CONTRACT.md`.
+**Current desktop release: 1.0.16.** The contract with the plugin is the plugin's `docs/APP-CONTRACT.md`.
 
 ## Licence
 
@@ -63,10 +63,10 @@ Build output is under `src-tauri/target/<target>/release/bundle/`. The **Desktop
 
 ## Version and GitHub release
 
-The desktop app uses a product version such as `1.0.15`; the conversion runtime is published separately on Docker Hub and pinned by digest. Increase the product version for every distributable build. `version:check` is also a CI gate.
+The desktop app uses a product version such as `1.0.16`; the conversion runtime is published separately on Docker Hub and pinned by digest. Increase the product version for every distributable build. `version:check` is also a CI gate.
 
 ```sh
-npm run version:set -- 1.0.15
+npm run version:set -- 1.0.16
 python3 scripts/bundle-runtime.py --namespace <docker-hub-namespace> --reuse-image <verified-local-image>
 npm run version:check
 TAURI_SIGNING_PRIVATE_KEY=~/.config/html2wp/tauri-updater.key TAURI_SIGNING_PRIVATE_KEY_PASSWORD='' npm run bundle:mac

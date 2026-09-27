@@ -121,7 +121,7 @@ export function CloudflarePanel({project,notify,onClose,onDeploying,initialRemov
     {offerReplace&&<label className="cf-check"><input type="checkbox" checked={replace} onChange={e=>setReplace(e.target.checked)}/>{t.replace(name)}</label>}
     <button className="button primary" type="button" disabled={!canDeploy} onClick={()=>void deploy()}>{deploying?<CircleNotch className="spin"/>:<CloudArrowUp/>}{deploying?t.deploying:site?.deployedAt?t.redeploy:t.deploy}</button>
    </section>
-   {site?.pagesUrl&&<section className="cf-step cf-remove"><h3><Trash size={17}/>{t.remove}</h3>
+   {site?.pagesUrl&&<section className="cf-step cf-remove" aria-label={t.remove}>
     {confirmRemove?<div className="cf-remove-confirm" role="group" aria-label={t.removeTitle}>
      <strong>{t.removeTitle}</strong><p>Cloudflare account <code>{site.accountId}</code> · project <code>{site.projectName}</code>. This deletes its deployments and takes its Pages address and connected domains offline. Your local project and exports stay here; external DNS records are not removed.</p>
      <div className="button-row"><button className="button cf-danger" type="button" disabled={removing||deploying||!signedIn} onClick={()=>void removeSite()}>{removing?<CircleNotch className="spin"/>:<Trash/>}{removing?t.removing:t.removeConfirm}</button><button className="button text" type="button" disabled={removing} onClick={()=>setConfirmRemove(false)}>{t.cancel}</button></div>
