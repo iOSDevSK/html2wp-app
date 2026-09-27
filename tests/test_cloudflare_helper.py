@@ -72,6 +72,7 @@ class Fake(BaseHTTPRequestHandler):
     def do_PATCH(self):self.handle_any('PATCH')
     def do_DELETE(self):self.handle_any('DELETE')
 
+@unittest.skipIf(sys.platform == 'win32', 'The Cloudflare helper and Wrangler run in the Linux runtime container')
 class CloudflareHelperTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();base=Path(self.tmp.name)
