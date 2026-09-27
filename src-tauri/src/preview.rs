@@ -153,7 +153,7 @@ struct Claim {
     state_owner: bool,
     state_path: PathBuf,
     agent: String,
-    project_path: PathBuf,
+    daemon_project: String,
 }
 
 fn owner_identity(workspace: &Path, agent: &str) -> Result<String> {
@@ -176,10 +176,18 @@ fn owner_identity(workspace: &Path, agent: &str) -> Result<String> {
     Ok(format!("{:x}", Sha256::digest(ascii.as_bytes())))
 }
 
+#[cfg(test)]
 fn claim(workspace: &Path, project_id: &str, state: &PreviewState) -> Result<Claim> {
+    claim_with_daemon(workspace, project_id, state, None)
+}
+fn claim_with_daemon(workspace: &Path, project_id: &str, state: &PreviewState, daemon_project: Option<&str>) -> Result<Claim> {
     let canonical = workspace
         .canonicalize()
         .map_err(|_| refuse("workspace is missing"))?;
+    let host_project = canonical.parent().ok_or_else(|| refuse("invalid workspace path"))?;
+    let daemon_project = daemon_project.map(str::to_owned)
+        .unwrap_or_else(|| host_project.to_string_lossy().into_owned());
+    let daemon_workspace = format!("{daemon_project}/workspace");
     if std::fs::symlink_metadata(workspace).is_ok_and(|m| m.file_type().is_symlink()) {
         return Err(refuse("workspace is a symbolic link"));
     }
@@ -224,7 +232,7 @@ fn claim(workspace: &Path, project_id: &str, state: &PreviewState) -> Result<Cla
         Ok(name.into())
     };
     let agent = format!("h2wpd-{project_id}-agent");
-    let owner = owner_identity(&canonical, &agent)?;
+    let owner = owner_identity(Path::new(&daemon_workspace), &agent)?;
     if !state.value["owner"].is_null() && state.value["owner"].as_str().is_none() {
         return Err(refuse("state owner is invalid"));
     }
@@ -244,10 +252,7 @@ fn claim(workspace: &Path, project_id: &str, state: &PreviewState) -> Result<Cla
         state_owner,
         state_path: canonical_state,
         agent,
-        project_path: canonical
-            .parent()
-            .ok_or_else(|| refuse("invalid workspace path"))?
-            .to_path_buf(),
+        daemon_project,
     })
 }
 
@@ -389,10 +394,8 @@ fn docker_id(row: &Value) -> Result<String> {
         .ok_or_else(|| refuse("Docker resource has no stable ID"))
 }
 fn prove(c: &Claim, r: &Resources) -> Result<Proof> {
-    let expected_state = c
-        .state_path
-        .to_str()
-        .ok_or_else(|| refuse("state path is not UTF-8"))?;
+    let expected_state = format!("{}/workspace/{}", c.daemon_project,
+        c.state_path.file_name().unwrap().to_string_lossy());
     let alias = format!(
         "/project/workspace/{}",
         c.state_path.file_name().unwrap().to_string_lossy()
@@ -480,11 +483,9 @@ fn prove(c: &Claim, r: &Resources) -> Result<Proof> {
             || labels(agent, true)["dev.html2wp.desktop"] != "true"
             || !agent["Mounts"].as_array().is_some_and(|mounts| {
                 mounts.iter().any(|m| {
-                    m["Source"]
-                        .as_str()
-                        .and_then(|s| Path::new(s).canonicalize().ok())
-                        .as_deref()
-                        == Some(c.project_path.as_path())
+                    m["Type"] == "bind"
+                        && m["Source"] == c.daemon_project
+                        && m["Destination"] == c.daemon_project
                 })
             })
         {
@@ -506,6 +507,7 @@ fn prove(c: &Claim, r: &Resources) -> Result<Proof> {
             || container_names.len() != 2
             || paths.iter().any(|p| *p != expected_state)
             || expected_state.starts_with("/project/")
+            || cfg!(windows)
         {
             return Err(refuse(
                 "legacy preview has no unambiguous host ownership label",
@@ -525,7 +527,13 @@ fn prove(c: &Claim, r: &Resources) -> Result<Proof> {
 }
 async fn owned(store: &Store, p: &Project, state: &PreviewState) -> Result<Proof> {
     let workspace = store.path(&p.id)?.join("workspace");
-    let c = claim(&workspace, &p.id, state)?;
+    let project = workspace.parent().ok_or_else(|| refuse("invalid project path"))?;
+    let paths = crate::project_paths::ProjectPaths::discover(project, &p.runtime_image).await
+        .map_err(|_| refuse("Docker project path could not be verified"))?;
+    if paths.host != dunce::canonicalize(project).map_err(|_| refuse("project path changed"))? {
+        return Err(refuse("Docker project path changed"));
+    }
+    let c = claim_with_daemon(&workspace, &p.id, state, Some(&paths.daemon))?;
     let r = resources(&c).await?;
     prove(&c, &r)
 }
@@ -673,7 +681,7 @@ mod tests {
         let network = json!({"Id":network_id,"Name":format!("{project}_default"),"Labels":{
             "com.docker.compose.project":project,"h2wp.owner":owner},"Containers":attachments});
         let agent_row = json!({"Id":agent_id,"Name":format!("/{agent}"),"Config":{"Labels":{"dev.html2wp.desktop":"true"}},
-            "Mounts":[{"Source":c.project_path.to_string_lossy()}]});
+            "Mounts":[{"Type":"bind","Source":c.daemon_project,"Destination":c.daemon_project}]});
         let r = Resources {
             containers: vec![container("wp"), container("db")],
             volumes: vec![volume("wp"), volume("db")],

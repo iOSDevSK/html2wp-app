@@ -441,22 +441,22 @@ pub async fn prepare(app: &AppHandle, state: &AppState) -> Result<Value> {
         progress(app,"check","Checking your local environment…",None,true);
         // A release pins one immutable, public Docker Hub manifest. No image
         // archive or publisher credentials are shipped with the application.
-        let bundle: Value=serde_json::from_str(include_str!("../../runtime/runtime-release.json")).map_err(err)?;
-        let reference=remote_runtime_reference(&bundle)?;
-        if bundle["architecture"]!=std::env::consts::ARCH { return Err("The published runtime is for a different processor".into()); }
+        let release: Value=serde_json::from_str(include_str!("../../runtime/runtime-release.json")).map_err(err)?;
+        let bundle=crate::runtime_manifest::selected(&release)?;
+        let reference=remote_runtime_reference(bundle)?;
         ensure_docker(app,state,&control).await?;
         cancelled(&control)?;
         let mut cached=None;
         for candidate in bundle["imageIds"].as_array().ok_or("Missing runtime image IDs")? {
             if let Some(candidate)=candidate.as_str() {
-                if let Ok(id)=inspect_remote_runtime(&bundle,candidate).await { cached=Some(id); break; }
+                if let Ok(id)=inspect_remote_runtime(bundle,candidate).await { cached=Some(id); break; }
             }
         }
         let image=match cached {
             Some(id)=>id, // Cache: a verified copy can prepare offline.
             None=>{
                 docker_stage(app,&control,"Downloading the conversion environment from Docker Hub…",&["pull".into(),reference.into()]).await.map_err(|e| if e.contains("429") || e.contains("toomanyrequests") { "Docker Hub's download limit was reached. Sign in to Docker Desktop, then retry Prepare environment.".to_string() } else { e })?;
-                inspect_remote_runtime(&bundle,reference).await?
+                inspect_remote_runtime(bundle,reference).await?
             }
         };
         for (label,dependency) in [("WordPress",runtime::WORDPRESS_IMAGE),("database",runtime::DATABASE_IMAGE)] {
@@ -514,10 +514,11 @@ mod tests {
     #[tokio::test]
     #[ignore = "downloads the pinned public runtime from Docker Hub and runs its self-check"]
     async fn docker_hub_runtime_acceptance() {
-        let bundle: Value = serde_json::from_str(include_str!("../../runtime/runtime-release.json")).unwrap();
-        let reference = remote_runtime_reference(&bundle).unwrap();
+        let release: Value = serde_json::from_str(include_str!("../../runtime/runtime-release.json")).unwrap();
+        let bundle = crate::runtime_manifest::selected(&release).unwrap();
+        let reference = remote_runtime_reference(bundle).unwrap();
         runtime::docker(&["pull".into(), reference.into()], None, 1800).await.unwrap();
-        let image = inspect_remote_runtime(&bundle,reference).await.unwrap();
+        let image = inspect_remote_runtime(bundle,reference).await.unwrap();
         let result = runtime::docker(&["run".into(), "--rm".into(), "--network".into(), "none".into(), image.clone(), "python3".into(), "/opt/desktop/selfcheck.py".into()], None, 120).await.unwrap();
         assert!(result.contains("RUNTIME_OK"));
         println!("Pulled, verified and executed Docker Hub runtime by immutable ID: {image}");

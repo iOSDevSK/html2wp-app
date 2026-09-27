@@ -50,13 +50,22 @@ fn important_capacity(path: &Path) -> Option<u64> {
 fn important_capacity(_: &Path) -> Option<u64> { None }
 
 fn immediate_capacity(path: &Path) -> Option<u64> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        use windows_sys::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
+        let wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+        let mut free = 0_u64;
+        let ok = unsafe { GetDiskFreeSpaceExW(wide.as_ptr(), &mut free, std::ptr::null_mut(), std::ptr::null_mut()) };
+        return (ok != 0).then_some(free);
+    }
     #[cfg(unix)]
     {
         let out = std::process::Command::new("df").arg("-Pk").arg(path).output().ok()?;
         if !out.status.success() { return None; }
         parse_df(&String::from_utf8_lossy(&out.stdout))
     }
-    #[cfg(not(unix))]
+    #[cfg(not(any(unix, windows)))]
     { let _ = path; None }
 }
 

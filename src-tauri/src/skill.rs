@@ -121,25 +121,29 @@ fn set_aside_result(store: &crate::store::Store, p: &Project) -> Result<()> {
 /// its environment and the host's Docker socket (the owner's decision: the
 /// client does not attack his own machine). It holds no Codex account. The
 /// owner's html2wp licence is copied in on start.
+#[cfg(test)]
 pub fn container_args(name: &str, image: &str, project: &Path, target: &str, plugin: &crate::plugin::Plugin) -> Vec<String> {
+    container_args_mapped(name, image, project, &project.display().to_string(), target, plugin)
+}
+fn container_args_mapped(name: &str, image: &str, project: &Path, daemon: &str, target: &str, plugin: &crate::plugin::Plugin) -> Vec<String> {
     let host = project.display().to_string();
     let env = [
         format!("H2WP_TARGET={target}"), format!("H2WP_WORKSPACE={PROJECT}/workspace"), format!("H2WP_OUTPUT_DIR={PROJECT}/out"),
         "H2WP_HOST=codex".into(), format!("H2WP_CONTAINER={name}"), "H2WP_STRICT_JOBS=1".into(),
         // The sandbox's copies: under the same-path mount, so the host's Docker finds them.
-        format!("TMPDIR={host}/.tmp"), "HOME=/home/agent".into(),
+        format!("TMPDIR={daemon}/.tmp"), "HOME=/home/agent".into(),
     ];
     ["create", "--name", name, "--label", "dev.html2wp.desktop=true", "--label", LAYOUT, "--init",
         "--security-opt", "no-new-privileges", "--pids-limit", "2048", "--memory", "8g", "--shm-size", "1g",
         // The plugin's preview WordPress and its build sandbox use the host's
         // Docker: the socket is mounted and the agent user is in its group.
         "--user", "1000:1000", "--group-add", "0"].into_iter().map(String::from)
-        .chain(["--workdir".into(), host.clone()])
+        .chain(["--workdir".into(), daemon.into()])
         .chain(env.into_iter().flat_map(|e| ["--env".to_string(), e]))
-        .chain(["--mount".into(), format!("type=bind,source={host},target={host}"),
+        .chain(["--mount".into(), format!("type=bind,source={host},target={daemon}"),
             // The owner's original and the app's copies of delivered files stay the app's.
-            "--mount".into(), format!("type=bind,source={host}/input,target={host}/input,readonly"),
-            "--mount".into(), format!("type=bind,source={host}/artifacts,target={host}/artifacts,readonly"),
+            "--mount".into(), format!("type=bind,source={},target={daemon}/input,readonly", project.join("input").display()),
+            "--mount".into(), format!("type=bind,source={},target={daemon}/artifacts,readonly", project.join("artifacts").display()),
             "--mount".into(), "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock".into()])
         // The plugin, read-only at /opt/html2wp: its repair never edits its own scripts.
         .chain(plugin.args())
@@ -147,7 +151,7 @@ pub fn container_args(name: &str, image: &str, project: &Path, target: &str, plu
         .collect()
 }
 /// The container's layout; a container made for another one is made again.
-const LAYOUT: &str = "dev.html2wp.layout=same-path-1";
+const LAYOUT: &str = "dev.html2wp.layout=same-path-2";
 /// The project's container, made from `image` (the installed runtime): one
 /// made from an older runtime, or for another layout, is made again; the
 /// project stays in its folder and the preview WordPress keeps running.
@@ -157,6 +161,7 @@ pub async fn ensure_container(store: &crate::store::Store, p: &Project, image: &
     let project = store.path(&p.id)?;
     let plugin = crate::plugin::require(store)?;
     for dir in ["source", "workspace", "out", ".tmp", "artifacts", "input"] { std::fs::create_dir_all(project.join(dir)).map_err(err)?; }
+    let paths = crate::project_paths::ProjectPaths::discover(&project, image).await?;
     let inspect = [String::from("inspect"), name.clone()];
     let mut was_running = false;
     if docker(&inspect, None, 10).await.is_ok() {
@@ -168,7 +173,7 @@ pub async fn ensure_container(store: &crate::store::Store, p: &Project, image: &
         else { was_running = running; }
     }
     if docker(&inspect, None, 10).await.is_err() {
-        let mut args = container_args(&name, image, &project, &p.target, &plugin);
+        let mut args = container_args_mapped(&name, image, &paths.host, &paths.daemon, &p.target, &plugin);
         // Developer override only (H2WP_API in the app's environment): the
         // plugin talks to a local html2wp service.
         if let Some((api, insecure_http)) = crate::licence::container_api() {
@@ -188,8 +193,10 @@ pub async fn ensure_container(store: &crate::store::Store, p: &Project, image: &
     }
     if !was_running {
         docker(&["start".into(), name.clone()], None, 30).await?;
-        // /project, as the contract's prompts name it: the project's host path.
-        docker(&["exec".into(), "--user".into(), "0".into(), name.clone(), "sh".into(), "-c".into(), "[ -L /project ] || [ ! -e /project ] || exit 1; ln -sfn \"$1\" /project".into(), "sh".into(), project.display().to_string()], None, 30).await?;
+        // /project names the Linux daemon path. Nested Docker bind mounts of
+        // TMPDIR must resolve to the same app-owned files on the host.
+        docker(&["exec".into(), "--user".into(), "0".into(), name.clone(), "sh".into(), "-c".into(), "[ -L /project ] || [ ! -e /project ] || exit 1; ln -sfn \"$1\" /project".into(), "sh".into(), paths.daemon.clone()], None, 30).await?;
+        paths.verify_agent(&name, image).await?;
     }
     // The licence the owner saved in Settings, or none (Free), as it is now.
     let licence = std::fs::read(store.root.join("private/licence")).ok();
@@ -240,7 +247,8 @@ pub async fn exec(store: &crate::store::Store, p: &Project, image: &str, args: &
         return Ok(json!({"exitCode":3,"output":"Not in a change: the owner packages the theme with the app's Make release. Apply the change with apply-change.py and answer.","truncated":false}));
     }
     let host = store.path(&p.id)?.display().to_string();
-    let (cmd, cwd, seconds) = crate::agent::exec_args(args, PROJECT, &[PROJECT, &host, PLUGIN, "/tmp", "/home/agent"])?;
+    let roots = if cfg!(windows) { vec![PROJECT, PLUGIN, "/tmp", "/home/agent"] } else { vec![PROJECT, host.as_str(), PLUGIN, "/tmp", "/home/agent"] };
+    let (cmd, cwd, seconds) = crate::agent::exec_args(args, PROJECT, &roots)?;
     let name = ensure_container(store, p, image).await?;
     let result = crate::agent::exec(&name, &cwd, &command_env(store, p), cmd, seconds).await?;
     let _ = crate::run_context::tool_log(store, p, &cmd, &result);

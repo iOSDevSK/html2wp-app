@@ -212,6 +212,14 @@ pub async fn preflight(image: &str) -> Value {
         Ok(v) => v.trim().to_string(),
         Err(e) => return json!({"ready":false,"docker":false,"message":e,"imageReady":false}),
     };
+    let platform = match docker(&args(&["info", "--format", "{{.OSType}}|{{.Architecture}}"]), None, 15).await {
+        Ok(v) => v.trim().to_string(),
+        Err(e) => return json!({"ready":false,"docker":false,"message":e,"imageReady":false}),
+    };
+    let expected_arch = match std::env::consts::ARCH { "aarch64" => "aarch64", "x86_64" => "x86_64", _ => "unsupported" };
+    if platform != format!("linux|{expected_arch}") {
+        return json!({"ready":false,"docker":false,"message":format!("The conversion needs a local Linux Docker engine for {expected_arch}. Switch Docker Desktop to Linux containers on this processor, then retry."),"imageReady":false});
+    }
     if let Err(e) = docker(&args(&["compose", "version", "--short"]), None, 15).await {
         return json!({"ready":false,"docker":true,"message":e,"imageReady":false});
     }

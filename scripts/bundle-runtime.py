@@ -54,11 +54,10 @@ def main():
     inputs = functional_manifest()
     recipe = hashlib.sha256((json.dumps(inputs, sort_keys=True) +
                             f"\0{versions['codexVersion']}\0{versions['h2gCommit']}").encode()).hexdigest()[:12]
-    tag = f'{namespace}/html2wp-runtime:desktop-{app_version}-{recipe}'
     if args.reuse_image:
         source = args.reuse_image
-        if not re.fullmatch(r'html2wp-runtime:desktop-\d+\.\d+\.\d+-[0-9a-f]{12}', source):
-            raise RuntimeError('Only a previous local html2wp runtime release can be reused')
+        if not re.fullmatch(r'html2wp-runtime:[a-z0-9._-]+', source):
+            raise RuntimeError('Only a local html2wp runtime image can be reused')
         if image_functional_manifest(source) != inputs:
             raise RuntimeError('The existing image differs from this runtime build context; rebuild it')
     else:
@@ -67,6 +66,7 @@ def main():
     identity = json.loads(run('docker', 'image', 'inspect', source))[0]
     image_id = identity['Id']
     architecture = {'arm64': 'aarch64', 'amd64': 'x86_64'}[identity['Architecture']]
+    tag = f'{namespace}/html2wp-runtime:desktop-{app_version}-{recipe}-{architecture}'
     if identity['Os'] != 'linux' or identity['Config']['Labels'].get('dev.html2wp.desktop') != 'true':
         raise RuntimeError('Refusing to publish an image without the expected runtime platform and label')
     if any(re.search(r'(TOKEN|SECRET|PASSWORD|API_KEY)', value.split('=', 1)[0], re.I)
@@ -121,10 +121,17 @@ def main():
         archived = json.loads(old.read_text())
         if archived.get('imageId') in identities:
             identities.update(archived.get('imageIds', []))
-    release = {'schemaVersion': 1, 'published': True, 'image': reference,
-               'imageId': config_id, 'imageIds': sorted(identities), 'architecture': architecture}
-    (ROOT / 'runtime/runtime-release.json').write_text(json.dumps(release, indent=2) + '\n')
-    versions['image'] = tag
+    release_file = ROOT / 'runtime/runtime-release.json'
+    previous = json.loads(release_file.read_text()) if release_file.is_file() else {}
+    platforms = previous.get('platforms', {}) if previous.get('schemaVersion') == 2 else {}
+    if previous.get('schemaVersion') == 1 and previous.get('architecture') in ('aarch64', 'x86_64'):
+        platforms[previous['architecture']] = {key: value for key, value in previous.items() if key != 'schemaVersion'}
+    platforms[architecture] = {'published': True, 'image': reference,
+                               'imageId': config_id, 'imageIds': sorted(identities), 'architecture': architecture}
+    release = {'schemaVersion': 2, 'platforms': platforms}
+    release_file.write_text(json.dumps(release, indent=2) + '\n')
+    if architecture == 'aarch64':
+        versions['image'] = tag
     (ROOT / 'runtime/versions.json').write_text(json.dumps(versions, indent=2) + '\n')
     print(f'Published {reference}\nLocal image ID {image_id}; architecture {architecture}')
 

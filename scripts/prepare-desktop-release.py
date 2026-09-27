@@ -71,7 +71,8 @@ def verify_signature():
 
 def main():
     release = json.loads((ROOT / 'runtime/runtime-release.json').read_text())
-    if release.get('published') is not True or '@sha256:' not in release.get('image', ''):
+    mac_runtime = release.get('platforms', {}).get('aarch64', release)
+    if mac_runtime.get('published') is not True or '@sha256:' not in mac_runtime.get('image', ''):
         raise RuntimeError('Publish and pin the public Docker Hub runtime first')
     if not all(path.is_file() for path in (DMG, ARCHIVE, SIGNATURE)) or not APP.is_dir():
         raise RuntimeError('Build app, DMG and signed updater archive for this version first')

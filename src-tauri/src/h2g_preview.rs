@@ -137,8 +137,10 @@ mod tests {
         let outside = dir.path().join("elsewhere/wordpress");
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::write(outside.join("wp-config.php"), "define( 'WP_HOME', 'http://127.0.0.1:8899' );").unwrap();
-        std::os::unix::fs::symlink(dir.path().join("elsewhere"), work.join("linked")).unwrap();
-        assert_eq!(sandbox(&store, &p), None);
+        #[cfg(unix)] {
+            std::os::unix::fs::symlink(dir.path().join("elsewhere"), work.join("linked")).unwrap();
+            assert_eq!(sandbox(&store, &p), None);
+        }
     }
     /// The real container (docker): the sandbox's server, started by the app
     /// with the skill's own command, answers on this Mac at the address its

@@ -18,10 +18,12 @@ mod notifications;
 mod plugin;
 mod preview;
 mod project_downloads;
+mod project_paths;
 // Retain the old managed-browser fixtures, but exclude its launcher from the app.
 #[cfg(test)]
 mod preview_browser;
 mod runtime;
+mod runtime_manifest;
 mod run_context;
 mod setup;
 mod app_update;
@@ -109,8 +111,9 @@ impl AppState {
     fn release_runtime_is_newer(&self) -> bool {
         let Some(active) = self.store.setting("active-runtime") else { return false };
         let Ok(release) = serde_json::from_str::<Value>(include_str!("../../runtime/runtime-release.json")) else { return true };
-        release["imageId"].as_str() != Some(&active)
-            && !release["imageIds"].as_array().is_some_and(|ids| ids.iter().any(|id| id.as_str()==Some(&active)))
+        let Ok(runtime) = runtime_manifest::selected(&release) else { return true };
+        runtime["imageId"].as_str() != Some(&active)
+            && !runtime["imageIds"].as_array().is_some_and(|ids| ids.iter().any(|id| id.as_str()==Some(&active)))
     }
     /// The Codex container on the installed runtime: one made from an older
     /// runtime is replaced (its account volume stays) and the connection to
@@ -203,7 +206,7 @@ impl AppState {
         self.store
             .setting("active-runtime")
             .unwrap_or_else(|| serde_json::from_str::<Value>(include_str!("../../runtime/runtime-release.json"))
-                .ok().and_then(|release| release["imageId"].as_str().map(str::to_owned))
+                .ok().and_then(|release| runtime_manifest::selected(&release).ok().and_then(|runtime| runtime["imageId"].as_str().map(str::to_owned)))
                 .unwrap_or_else(|| self.versions["image"].as_str().unwrap().into()))
     }
     async fn connection(&self, app: &tauri::AppHandle) -> Result<Arc<codex::Rpc>> {

@@ -69,9 +69,9 @@ Na inštaláciu používaj výsledný setup EXE. Docker runtime image nie je v E
 
 ## 4. Spustenie a konverzia
 
-Samotný build zdrojov nepotrebuje Docker, Python ani prihlásenie do Codexu. Verzia 1.0.16 má v `runtime/runtime-release.json` pripnutý image pre ARM64. Windows x64 inštalátor preto **zatiaľ nie je použiteľným vydaním na konverziu**; pred distribúciou treba publikovať a pripnúť kompatibilný Linux AMD64 runtime image, potom otestovať prípravu prostredia a konverziu na čistom Windows. Zdrojový ZIP neobsahuje runtime image.
+Samotný build zdrojov nepotrebuje Docker, Python ani prihlásenie do Codexu. `runtime/runtime-release.json` obsahuje samostatné nemenné Linux image digesty pre ARM64 a x86_64. Windows x64 aplikácia vyberie x86_64. Zdrojový ZIP ani inštalátor neobsahujú runtime image.
 
-Po príprave kompatibilného runtime image tlačidlo **Prepare environment** stiahne alebo spustí Docker Desktop a pripraví kontajnery. Používateľ potvrdí systémové oprávnenia a podmienky Dockeru. Windows môže vyžiadať WSL alebo reštart. Čistá Windows inštalácia zatiaľ nebola otestovaná; pozri [stav automatickej prípravy](docs/automatic-setup.md).
+Tlačidlo **Prepare environment** stiahne alebo spustí Docker Desktop a pripraví kontajnery. Docker musí používať lokálny Linux x64 engine. Používateľ potvrdí systémové oprávnenia a podmienky Dockeru. Windows môže vyžiadať WSL alebo reštart. Aplikácia pred konverziou overuje, že natívna cesta projektu a cesta Linux Docker daemonu ukazujú na tie isté súbory aj vo vnorenom build kontajneri. Čistá Windows inštalácia vyžaduje ešte manuálny smoke test; pozri [stav automatickej prípravy](docs/automatic-setup.md).
 
 V aplikácii otvor **Settings → Check environment → Prepare environment → Connect with ChatGPT**. Následne vyber model a nastav Free alebo svoju html2wp licenciu.
 
@@ -87,8 +87,8 @@ V aplikácii otvor **Settings → Check environment → Prepare environment → 
 
 ZIP je snapshot zdrojov bez histórie `.git`. Obsahuje `.gitmodules`, GitHub Actions a zdroje pripnutých submodulov. Na build zo ZIPu nemusíš inicializovať Git ani sťahovať plugin zvlášť.
 
-Pre ďalší vývoj klonuj [zdrojový repozitár](https://github.com/iOSDevSK/html2wp-app) s `--recurse-submodules`. Aktuálny build workflow zostavuje macOS ARM64; Windows a Linux sú vývojové vetvy bez natívne overeného vydania.
+Pre ďalší vývoj klonuj [zdrojový repozitár](https://github.com/iOSDevSK/html2wp-app) s `--recurse-submodules` a vyber vetvu `windows`. Workflow `Windows x64` na tejto vetve zostaví a otestuje natívny Windows NSIS inštalátor vrátane Tauri updater podpisu. Samotný podpis updatera nezaručuje podpis Windows Authenticode ani odstránenie SmartScreen upozornenia.
 
 Pôvodná licencia pluginu je vo `vendor/html2wp/LICENSE`; licencie závislostí sú v `notices/`. Podrobnosti o ich zbere sú v `docs/desktop-licensing.md`. `SOURCE-MANIFEST.json` v ZIPe obsahuje SHA-256 každého pribaleného súboru.
 
-**Stav overenia:** zdroje boli zabalené a integrita pluginu overená po rozbalení. Windows kompilácia ani beh na Windows v tomto macOS prostredí neboli vykonané. Pred vydaním inštalátor otestuj na Windows.
+**Stav overenia:** výstup Windows CI dokazuje kompiláciu a podpis aktualizačného balíka. Funkčný beh Docker Desktop, prihlásenie, konverzia, preview a inštalácia aktualizácie vyžadujú samostatný test na Windows počítači; CI bez Docker Desktop ich neoverí.

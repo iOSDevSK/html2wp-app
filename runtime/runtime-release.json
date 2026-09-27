@@ -1,11 +1,25 @@
 {
-  "schemaVersion": 1,
-  "published": true,
-  "image": "docker.io/milenium/html2wp-runtime@sha256:93c110c0e9bc631f3ab2dbfde379f74efb0f6fe446859f21ee414898b0062f17",
-  "imageId": "sha256:14e27089b5c3ddf38576e0a8b850d646949657a4fb0be507456c5c625d69cda0",
-  "imageIds": [
-    "sha256:14e27089b5c3ddf38576e0a8b850d646949657a4fb0be507456c5c625d69cda0",
-    "sha256:93c110c0e9bc631f3ab2dbfde379f74efb0f6fe446859f21ee414898b0062f17"
-  ],
-  "architecture": "aarch64"
+  "schemaVersion": 2,
+  "platforms": {
+    "aarch64": {
+      "published": true,
+      "image": "docker.io/milenium/html2wp-runtime@sha256:93c110c0e9bc631f3ab2dbfde379f74efb0f6fe446859f21ee414898b0062f17",
+      "imageId": "sha256:14e27089b5c3ddf38576e0a8b850d646949657a4fb0be507456c5c625d69cda0",
+      "imageIds": [
+        "sha256:14e27089b5c3ddf38576e0a8b850d646949657a4fb0be507456c5c625d69cda0",
+        "sha256:93c110c0e9bc631f3ab2dbfde379f74efb0f6fe446859f21ee414898b0062f17"
+      ],
+      "architecture": "aarch64"
+    },
+    "x86_64": {
+      "published": true,
+      "image": "docker.io/milenium/html2wp-runtime@sha256:abc07c2810b28b120a87d5395b54e34376279c87607d414b61331c130291510a",
+      "imageId": "sha256:eb35764b00dd0a81366da1dd29875454a0dabe3e68d4d64c68956c7c693143c1",
+      "imageIds": [
+        "sha256:abc07c2810b28b120a87d5395b54e34376279c87607d414b61331c130291510a",
+        "sha256:eb35764b00dd0a81366da1dd29875454a0dabe3e68d4d64c68956c7c693143c1"
+      ],
+      "architecture": "x86_64"
+    }
+  }
 }

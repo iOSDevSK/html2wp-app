@@ -385,6 +385,7 @@ mod tests {
         assert!(!args.iter().any(|a| a.contains("remote-debugging")));
     }
 
+    #[cfg(unix)]
     #[test]
     fn a_stale_profile_lock_is_not_a_running_browser() {
         let dir = tempfile::tempdir().unwrap();

@@ -16,7 +16,7 @@ const tauri=json('src-tauri/tauri.conf.json');
 const notice=json('notices/desktop.cdx.json');
 const cargo=read('src-tauri/Cargo.toml');
 const cargoLock=read('src-tauri/Cargo.lock');
-const packageLockPattern=/\[\[package\]\]\nname = "html2wp-desktop"\nversion = "([^"]+)"/;
+const packageLockPattern=/\[\[package\]\]\r?\nname = "html2wp-desktop"\r?\nversion = "([^"]+)"/;
 const cargoPattern=/^version = "([^"]+)"/m;
 const cargoVersion=cargo.match(cargoPattern)?.[1];
 const cargoLockedVersion=cargoLock.match(packageLockPattern)?.[1];

@@ -1656,6 +1656,7 @@ version = "1.0.16"
 dependencies = [
  "base64 0.22.1",
  "chrono",
+ "dunce",
  "ed25519-dalek",
  "http-body-util",
  "hyper",
@@ -1678,6 +1679,7 @@ dependencies = [
  "url",
  "uuid",
  "walkdir",
+ "windows-sys 0.61.2",
  "zip 2.4.2",
 ]
 
