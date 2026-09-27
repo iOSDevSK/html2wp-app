@@ -1,0 +1,11 @@
+{
+  "schema": "h2wp-result/1",
+  "plugin": "1.0.0-gamma.1",
+  "mode": "flash",
+  "target": "html",
+  "status": "stopped",
+  "stopped": {"stage": "3", "reason": "The service refused the conversion: the licence has no conversions left."},
+  "site": {"name": "Clara Hayes", "slug": "clara-hayes", "version": "1.0.0"},
+  "report": {"markdown": "CONVERSION-REPORT.md"},
+  "verdict": "stopped"
+}

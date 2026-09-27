@@ -1,0 +1,75 @@
+[
+  {
+    "type": "function",
+    "name": "report_progress",
+    "description": "Gutenberg from an HTML theme only: report the html2wp-to-gutenberg workflow step you are starting (docs/workflow.md: 1 Audit, 2 Scaffold and theme.json, 3 Fonts, 4 CSS, 5 JS, 6 Parts, templates and patterns, 7 Content, 8 Importer and setup, 9 Verify) with a one-line note. Report each step when you start it; the owner's Overview shows it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "step": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 300
+        }
+      },
+      "required": [
+        "step"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "type": "function",
+    "name": "sandbox_exec",
+    "description": "Gutenberg from an HTML theme only: run one bash command in the project's sandbox (the network is available; no credentials). This is your only way to read, run and write files: create and edit files with heredocs, python3 or sed here. The input theme is /input (read-only), work under /work (the new theme in /work/output/<new-slug>/), scratch in /tmp; the skill is /opt/desktop/skills/html2wp-to-gutenberg, WordPress 7.0.2 with the SQLite drop-in /opt/wp-offline/wordpress. Answers the exit code and the output's tail. Start long-running servers with setsid nohup \u2026 &.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "cmd": {
+          "type": "string"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        }
+      },
+      "required": [
+        "cmd"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "type": "function",
+    "name": "project_shell",
+    "description": "Run one bash command in the project's own container. The project is /project: source/ (the owner's project, your working copy), workspace/, out/ (what the owner gets) and .tmp/; /project/input (the owner's original) and /project/artifacts are read-only. The html2wp plugin's skill is /opt/html2wp. The container's environment carries the plugin's settings (H2WP_MODE, H2WP_TARGET, H2WP_WORKSPACE, H2WP_OUTPUT_DIR, TMPDIR and the rest); the network is available. This is your only way to read, run and write files: run the skill's scripts as its SKILL.md says, and create and edit files with heredocs, python3 or sed. Answers the exit code and the output's tail. Start long-running servers with setsid nohup \u2026 &.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "cmd": {
+          "type": "string"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        }
+      },
+      "required": [
+        "cmd"
+      ],
+      "additionalProperties": false
+    }
+  }
+]

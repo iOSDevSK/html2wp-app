@@ -1,0 +1,35 @@
+name: Checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: python3 scripts/check-public-markdown.py
+      - run: npm run version:check
+      - run: npm run test:runtime
+      - run: npm test
+      - run: npm run build
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+      - name: Check the real pinned Codex startup (no login or model call)
+        run: |
+          npm install --global "@openai/codex@$(node -p 'require("./runtime/versions.json").codexVersion')"
+          cargo test --manifest-path src-tauri/Cargo.toml --locked local_codex_protocol_smoke -- --ignored
+        env:
+          H2WP_TEST_CODEX_CLI: codex
+      - run: python3 tests/code_mode_smoke.py
+      - run: npx playwright install chromium
+      - run: npx playwright test

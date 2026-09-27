@@ -1,0 +1,99 @@
+html2wp Desktop Source-Available Commercial Licence
+Version 1.0, 2026-09-27
+
+Copyright (c) 2026 BELNEM s.r.o. All rights reserved.
+
+Licensor: BELNEM s.r.o., Beckovska 5, 821 04 Bratislava, Slovakia;
+Company ID (ICO) 53713486; registered in the Commercial Register of the
+Municipal Court Bratislava III, Section Sro, Insert No. 152015/B.
+
+This licence covers the original html2wp Desktop application code and
+documentation owned by BELNEM s.r.o. (the "Software"). It is source-available,
+not an open-source licence. It does not relicense third-party material,
+including the separate projects under vendor/, material under notices/,
+dependencies, Docker images and their contents, or the html2wp plugin fetched
+by the application. Those components keep their own licences and notices.
+
+"Commercial Use" means using the Software for a business, profession, client,
+employer, or other commercial advantage, whether or not a conversion is billed
+separately. A "Key" is a current html2wp licence key issued by BELNEM s.r.o.;
+its stated term and scope control the uses it permits. "Output" means themes,
+reports, site files, and other results produced by running the Software.
+
+1. PERMITTED USE
+
+You may inspect, evaluate, build, and run the Software for non-commercial use
+without a Key. You may modify it and make copies for your own internal use
+within that non-commercial scope.
+
+While you hold a Key, you may also run the Software commercially within the
+Key's scope, including to convert sites for clients and deliver the Output to
+them. You may modify and copy the Software internally for that use. A Key does
+not give you permission to distribute the Software or offer the Software itself
+as a conversion service or product for others.
+
+GitHub users may view and fork this public repository as GitHub's Terms of
+Service permit. A fork does not expand the rights to use, distribute, or
+sublicense the Software granted by this licence.
+
+2. RESTRICTIONS
+
+Without BELNEM s.r.o.'s separate written permission, you may not distribute,
+republish, sublicense, sell, or provide the Software, an altered version, or a
+substantial part of it to anyone outside your organisation. You may share a
+link to the Licensor's official release; this restriction does not prevent
+ordinary hosting, backup, AI-assisted operation, or contractors processing
+the Software on your behalf as necessary for a permitted use.
+
+You may not use the Software or a derivative of it to build, offer, or operate
+a competing website-conversion app, plugin, skill, CLI, API, or service for
+others. You may not remove or bypass licence checks or service limits. You
+may not remove copyright or licence notices. Rights that mandatory law gives
+a lawful user and cannot be waived are unaffected.
+
+3. OUTPUT AND SEPARATE SERVICES
+
+BELNEM s.r.o. claims no ownership of your Output. You may use, modify, sell,
+and deliver it, even after your Key expires. This grant reaches only material
+BELNEM s.r.o. can license; input assets and third-party components retain
+their own rights. It does not excuse unlicensed use of the Software.
+
+Access to the html2wp conversion service is governed by its own terms at
+https://html2wp.dev/service-terms.html. This licence grants no rights in that
+service, the separate html2wp plugin, Docker Desktop, Codex, WordPress, or
+other third-party software. Their respective licences and terms apply.
+
+4. RESERVED RIGHTS AND TERMINATION
+
+All rights not expressly granted are reserved. No trademark rights are
+granted. This licence ends if you breach it and do not cure the breach within
+30 days after notice. Buying a Key does not retroactively authorise earlier
+unlicensed use unless BELNEM s.r.o. agrees in writing. On termination, stop
+using the Software and delete copies you control; your rights in Output under
+section 3 survive.
+
+5. NO WARRANTY; LIMITATION OF LIABILITY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+NONINFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED BY LAW, BELNEM S.R.O. IS NOT
+LIABLE FOR CLAIMS, DAMAGES, LOST PROFITS, LOST DATA, OR OTHER LIABILITY
+ARISING FROM THE SOFTWARE OR ITS USE. Nothing excludes liability that cannot
+lawfully be excluded.
+
+6. CONTRIBUTIONS
+
+If you submit code to BELNEM s.r.o. for inclusion in the Software, you grant
+BELNEM s.r.o. a perpetual, irrevocable, worldwide, royalty-free licence to use,
+modify, distribute, and sublicense that contribution under any terms. You keep
+your own copyright. A defect report without code does not grant such rights.
+
+7. GOVERNING LAW
+
+The laws of the Slovak Republic govern this licence, except where mandatory
+law provides otherwise. Courts in the Slovak Republic have jurisdiction,
+without depriving a consumer of mandatory protections where they live. If a
+provision is unenforceable, the remaining provisions continue in effect.
+
+For redistribution, integration into another product, or other commercial
+rights beyond this licence, contact hello@html2wp.dev.

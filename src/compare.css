@@ -1,0 +1,27 @@
+/* Compare: the page-by-page comparison (the source beside WordPress). */
+.compare-page{padding:30px 34px}
+.compare-status{display:flex;align-items:center;gap:8px;font-size:11px;color:#8e9d7c;margin:0 0 20px}
+.compare-nav{display:flex;align-items:center;gap:10px;margin:0 0 16px}
+.compare-nav select{flex:1;min-width:0;font-size:11px}
+.compare-nav .position{font-size:10px;color:#9aa58b;white-space:nowrap}
+.compare-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin:0 0 12px}
+.compare-meta h3{margin:0;font-size:14px}
+.compare-meta code{font-size:10px;color:#7f8f6d}
+.compare-meta .diff{font-size:11px;color:#6b785f}
+.compare-widths{display:flex;gap:6px;margin:0 0 12px}
+.compare-widths .button{padding:6px 10px;font-size:10px}
+.compare-widths .button.selected{background:#e3e8dd;border-color:#c7d2bb}
+.comparison{border:1px solid #e0e8d5;border-radius:5px;max-height:560px;overflow:auto;background:#fff;min-height:160px}
+/* The composite's tiny embedded captions are unreadable at panel width. */
+.comparison-labels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 8px;color:#526a42;font-size:12px;font-weight:600}
+.comparison-labels span{min-width:0;padding:8px 12px;border:1px solid #e0e8d5;border-radius:5px;background:#f4f7ef;text-align:center}
+.comparison-frame.mobile .comparison-labels{max-width:520px;margin:0 auto 8px}
+.comparison-frame.mobile .comparison{max-width:520px;margin:0 auto}
+.comparison img{display:block;width:100%;cursor:zoom-in}
+.comparison p{text-align:center;padding:50px 20px;color:#95a584;margin:0}
+.image-modal{position:fixed;inset:0;background:#e4ead9;z-index:100;overflow:auto;padding:70px 30px 30px}
+.image-modal>.button{position:fixed;top:18px;right:28px;z-index:1}
+.image-modal img{width:100%;max-width:2200px;display:block;margin:auto}
+.image-modal .comparison-labels{max-width:2200px;margin:0 auto 8px}
+
+.comparison-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;cursor:zoom-in}.comparison-pair figure{margin:0;min-width:0}.comparison-pair figcaption{font-size:10px;letter-spacing:.5px;color:#8a9a78;margin:0;padding:6px 8px}.comparison-pair img{width:100%;display:block}.image-modal .comparison-pair{cursor:default}

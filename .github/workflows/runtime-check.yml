@@ -1,0 +1,31 @@
+name: Runtime compatibility
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - run: node scripts/prepare-runtime.mjs
+      - run: docker build -t html2wp-runtime:check runtime
+      - run: docker run --rm --network none html2wp-runtime:check python3 /opt/desktop/selfcheck.py
+      - name: Exercise Codex Code Mode with the agent container limits
+        run: docker run --rm --network none --user 1000:1000 --cap-drop=ALL --security-opt no-new-privileges --pids-limit 256 --memory 1g --mount type=bind,source="$PWD/tests",target=/tests,readonly html2wp-runtime:check python3 /tests/code_mode_smoke.py --tools /opt/desktop/tools.json
+      - name: Record exact image identity
+        run: docker image inspect html2wp-runtime:check > runtime-image.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runtime-identity-${{ matrix.os }}
+          path: runtime-image.json

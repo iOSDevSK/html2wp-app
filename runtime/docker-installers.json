@@ -1,0 +1,12 @@
+{
+  "version": "4.91.0",
+  "source": "https://docs.docker.com/desktop/release-notes/#4910",
+  "installers": {
+    "macos-aarch64": {"url":"https://desktop.docker.com/mac/main/arm64/239619/Docker.dmg","sha256":"31a324e8f72acf178c9f5d46cd71240705541faa69827588813e539d29c7e859","file":"Docker.dmg"},
+    "macos-x86_64": {"url":"https://desktop.docker.com/mac/main/amd64/239619/Docker.dmg","sha256":"19c1b4483900b4d14d07dd638fb18ccbdc35fb91eccf1a6de274e74697309d97","file":"Docker.dmg"},
+    "windows-x86_64": {"url":"https://desktop.docker.com/win/main/amd64/239619/Docker%20Desktop%20Installer.exe","sha256":"ac405b09942701770d581b173747fc1024cf0e6047cbe60f13d1df85437311ac","file":"DockerDesktopInstaller.exe"},
+    "windows-aarch64": {"url":"https://desktop.docker.com/win/main/arm64/239619/Docker%20Desktop%20Installer.exe","sha256":"cae67a7241a18acdbbd803197316b64eaddb7ff25767b4e93e8574fa1f8d15a8","file":"DockerDesktopInstaller.exe"},
+    "linux-deb": {"url":"https://desktop.docker.com/linux/main/amd64/239619/docker-desktop-amd64.deb","sha256":"2538f5785510c68207266175b738e2aa08decb6367e54311d0bf25216d6eca3e","file":"docker-desktop-amd64.deb"},
+    "linux-rpm": {"url":"https://desktop.docker.com/linux/main/amd64/239619/docker-desktop-x86_64.rpm","sha256":"d814b92b7d368cd14d0408dc15c3074c43ea1443544d1d15968d0b668713fbd5","file":"docker-desktop-x86_64.rpm"}
+  }
+}

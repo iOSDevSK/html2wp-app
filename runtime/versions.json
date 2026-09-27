@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.0.0",
+  "codexVersion": "0.157.0",
+  "wranglerVersion": "4.136.1",
+  "image": "milenium/html2wp-runtime:desktop-1.0.14-96931e764f9c",
+  "upstream": "https://github.com/iOSDevSK/html2wp-codex-plugin",
+  "channel": "development",
+  "h2gCommit": "a93e857686a8f1c0782cf576d72f6f5f3eae9215"
+}

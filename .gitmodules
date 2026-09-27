@@ -1,0 +1,7 @@
+[submodule "vendor/html2wp"]
+  path = vendor/html2wp
+  url = https://github.com/iOSDevSK/html2wp-codex-plugin.git
+  branch = main
+[submodule "vendor/html2wp-to-gutenberg"]
+	path = vendor/html2wp-to-gutenberg
+	url = https://github.com/iOSDevSK/html2wp-to-gutenberg.git

@@ -1,0 +1,56 @@
+{
+  "schema": "h2wp-visual-compare/1",
+  "capturedAt": "2026-09-24T21:40:00Z",
+  "preview": "http://localhost:53412",
+  "original": "/project/workspace/static-src",
+  "pages": [
+    {
+      "key": "front-page",
+      "title": "Home",
+      "page": "index.html",
+      "route": "http://localhost:53412/",
+      "desktop": {
+        "image": "visual-review/front-page.side-by-side.png",
+        "diffPercent": 0.42,
+        "origHeight": 3200,
+        "wpHeight": 3212
+      },
+      "mobile": {
+        "image": "visual-review/mobile/front-page.side-by-side.png",
+        "diffPercent": 1.3,
+        "origHeight": 6100,
+        "wpHeight": 6100
+      }
+    },
+    {
+      "key": "about",
+      "title": "About",
+      "page": "about.html",
+      "route": "http://localhost:53412/about/",
+      "desktop": {
+        "image": "visual-review/about.side-by-side.png",
+        "diffPercent": 3.7,
+        "origHeight": 2400,
+        "wpHeight": 2500
+      },
+      "mobile": {
+        "image": "visual-review/mobile/about.side-by-side.png",
+        "diffPercent": 5.1,
+        "origHeight": 4800,
+        "wpHeight": 4900
+      }
+    },
+    {
+      "key": "contact",
+      "title": "Contact",
+      "page": "contact.html",
+      "route": "http://localhost:53412/contact/",
+      "desktop": {
+        "error": "the page timed out after 60 s"
+      },
+      "mobile": {
+        "error": "the page timed out after 60 s"
+      }
+    }
+  ]
+}

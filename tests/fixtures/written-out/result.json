@@ -1,0 +1,135 @@
+{
+  "schema": "h2wp-result/1",
+  "plugin": "1.0.0-gamma.1",
+  "mode": "flash",
+  "target": "html",
+  "status": "delivered",
+  "stopped": null,
+  "site": {
+    "name": "Clara Hayes",
+    "slug": "clara-hayes",
+    "version": "1.0.0"
+  },
+  "theme": {
+    "file": "clara-hayes-1.0.0.zip",
+    "sha256": "257a4c075a4c2721970ffc7ef0380d0bf7329185de8f34ff9a6ac8336561c34c",
+    "bytes": 4
+  },
+  "astro": null,
+  "builtSite": null,
+  "report": {
+    "markdown": "CONVERSION-REPORT.md",
+    "pdf": null
+  },
+  "preview": null,
+  "verdict": "Flash: checks not run",
+  "gates": [
+    {
+      "id": "prerender",
+      "stage": "-1",
+      "status": "not_run",
+      "reportOnly": false,
+      "detail": "no prerender report",
+      "report": null
+    },
+    {
+      "id": "A",
+      "stage": "2",
+      "status": "not_run",
+      "reportOnly": false,
+      "detail": "no full report",
+      "report": null
+    },
+    {
+      "id": "A2",
+      "stage": "2",
+      "status": "not_run",
+      "reportOnly": false,
+      "detail": "no parity report",
+      "report": null
+    },
+    {
+      "id": "listings",
+      "stage": "1",
+      "status": "skipped",
+      "reportOnly": false,
+      "detail": "no blog and no shop to wire",
+      "report": null
+    },
+    {
+      "id": "convert",
+      "stage": "3",
+      "status": "not_run",
+      "reportOnly": false,
+      "detail": "no service conversion recorded",
+      "report": null
+    },
+    {
+      "id": "install",
+      "stage": "5",
+      "status": "not_run",
+      "reportOnly": false,
+      "detail": "no report",
+      "report": null
+    },
+    {
+      "id": "quick",
+      "stage": "5",
+      "status": "not_run",
+      "reportOnly": false,
+      "detail": "no report",
+      "report": null
+    },
+    {
+      "id": "B",
+      "stage": "5",
+      "status": "not_run",
+      "reportOnly": false,
+      "detail": "no full report",
+      "report": null
+    },
+    {
+      "id": "C",
+      "stage": "5",
+      "status": "not_run",
+      "reportOnly": false,
+      "detail": "no full report",
+      "report": null
+    },
+    {
+      "id": "smoke",
+      "stage": "5",
+      "status": "not_run",
+      "reportOnly": false,
+      "detail": "no report",
+      "report": null
+    },
+    {
+      "id": "woo",
+      "stage": "5.6",
+      "status": "skipped",
+      "reportOnly": false,
+      "detail": "no shop",
+      "report": null
+    }
+  ],
+  "wired": {
+    "menus": 0,
+    "menusWired": 0,
+    "blog": {
+      "present": false,
+      "posts": 0
+    },
+    "shop": {
+      "present": false,
+      "products": 0
+    },
+    "forms": 0,
+    "collections": 0
+  },
+  "service": {
+    "edition": null,
+    "jobId": null,
+    "verdictsSent": false
+  }
+}

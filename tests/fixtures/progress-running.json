@@ -1,0 +1,156 @@
+{
+    "schema": "h2wp-progress/1",
+    "mode": "flash",
+    "target": "html",
+    "stage": "3",
+    "label": "the service builds the theme",
+    "percent": 59,
+    "state": "running",
+    "note": "the service builds the theme, about 3 min",
+    "next": "the theme screenshot",
+    "updatedAt": "2026-09-24T17:35:17Z",
+    "stages": [
+        {
+            "stage": "-4",
+            "label": "what is already here",
+            "percent": 0,
+            "state": "done",
+            "note": "a fresh workspace"
+        },
+        {
+            "stage": "-3",
+            "label": "prerequisites",
+            "percent": 1,
+            "state": "done",
+            "note": ""
+        },
+        {
+            "stage": "-1",
+            "label": "prepare the input (prerender or static build)",
+            "percent": 15,
+            "state": "done",
+            "note": "12 routes"
+        },
+        {
+            "stage": "0",
+            "label": "analyze and write the manifest",
+            "percent": 24,
+            "state": "done",
+            "note": "manifest: 12 pages, blog, 3 forms"
+        },
+        {
+            "stage": "-1b",
+            "label": "commerce specimen (shops)",
+            "percent": 26,
+            "state": "skipped",
+            "note": "no shop"
+        },
+        {
+            "stage": "0.5",
+            "label": "optimise the images",
+            "percent": 28,
+            "state": "done",
+            "note": ""
+        },
+        {
+            "stage": "0.6",
+            "label": "give the images their loading attributes",
+            "percent": 30,
+            "state": "done",
+            "note": ""
+        },
+        {
+            "stage": "1",
+            "label": "HTML to Astro",
+            "percent": 38,
+            "state": "done",
+            "note": ""
+        },
+        {
+            "stage": "2.6",
+            "label": "move JS-held copy into the markup",
+            "percent": 41,
+            "state": "done",
+            "note": ""
+        },
+        {
+            "stage": "2.65",
+            "label": "name every form field",
+            "percent": 43,
+            "state": "done",
+            "note": ""
+        },
+        {
+            "stage": "2",
+            "label": "gates A + A2, reported",
+            "percent": 52,
+            "state": "warned",
+            "note": "A: 2 of 9 pages over threshold (report only)"
+        },
+        {
+            "stage": "2.5",
+            "label": "capture the chrome per design group",
+            "percent": 56,
+            "state": "done",
+            "note": ""
+        },
+        {
+            "stage": "2.7",
+            "label": "record the repeating groups",
+            "percent": 59,
+            "state": "done",
+            "note": ""
+        },
+        {
+            "stage": "3",
+            "label": "the service builds the theme",
+            "percent": 70,
+            "state": "running",
+            "note": "the service builds the theme, about 3 min"
+        },
+        {
+            "stage": "3.5",
+            "label": "the theme screenshot",
+            "percent": 72,
+            "state": "pending",
+            "note": ""
+        },
+        {
+            "stage": "5",
+            "label": "install and check in a real WordPress",
+            "percent": 88,
+            "state": "pending",
+            "note": ""
+        },
+        {
+            "stage": "5.6",
+            "label": "the WooCommerce audit",
+            "percent": 91,
+            "state": "pending",
+            "note": ""
+        },
+        {
+            "stage": "6",
+            "label": "package the deliverables",
+            "percent": 97,
+            "state": "pending",
+            "note": ""
+        },
+        {
+            "stage": "6.5",
+            "label": "report the gates",
+            "percent": 99,
+            "state": "pending",
+            "note": ""
+        },
+        {
+            "stage": "7",
+            "label": "clean up the workspace",
+            "percent": 100,
+            "state": "pending",
+            "note": ""
+        }
+    ],
+    "startedAt": "2026-09-24T17:35:15Z",
+    "preview": null
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "h2wp-result/1",
+  "plugin": "1.0.0-gamma.1",
+  "mode": "flash",
+  "target": "html",
+  "status": "delivered",
+  "stopped": null,
+  "site": {"name": "Clara Hayes", "slug": "clara-hayes", "version": "1.0.0"},
+  "theme": {"file": "clara-hayes-1.0.0.zip", "sha256": "SHA256-OF-THE-ZIP", "bytes": 3},
+  "astro": {"file": "clara-hayes-astro-1.0.0.zip", "sha256": "SHA256-OF-THE-ASTRO-ZIP"},
+  "report": {"markdown": "CONVERSION-REPORT.md", "pdf": "conversion-report.pdf"},
+  "preview": {"url": "http://localhost:53412", "user": "admin", "stateFile": "/project/workspace/.test-env-clara-hayes.json"},
+  "verdict": "Flash: not visually repaired",
+  "gates": [
+    {"id": "A", "stage": "2", "status": "failed", "reportOnly": true, "detail": "2 of 9 pages differ above the threshold", "report": "workspace/verify-static/report.json"},
+    {"id": "B", "stage": "5", "status": "passed", "reportOnly": false, "detail": "every page answers 200"}
+  ],
+  "wired": {"menus": 2, "blog": {"present": true, "posts": 6}, "shop": {"present": false}, "forms": 1, "collections": 0},
+  "service": {"edition": "pro", "jobId": "job_fixture", "verdictsSent": true}
+}

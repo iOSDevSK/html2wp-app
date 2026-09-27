@@ -1,0 +1,73 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "html2wp",
+  "version": "1.0.15",
+  "identifier": "dev.html2wp.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run prepare:runtime && npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "html2wp",
+        "width": 1380,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 680,
+        "backgroundColor": "#f8f8f6",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; frame-src 'none'; base-uri 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": true,
+    "targets": "all",
+    "category": "DeveloperTool",
+    "shortDescription": "Your website, ready for WordPress.",
+    "resources": {
+      "../LICENSE": "licenses/desktop/LICENSE",
+      "../runtime/versions.json": "runtime/versions.json",
+      "../runtime/runtime-release.json": "runtime/runtime-release.json",
+      "../schemas/codex/": "schemas/codex/",
+      "../notices/": "licenses/desktop/"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "12.0",
+      "signingIdentity": "-"
+    },
+    "windows": {
+      "nsis": {
+        "displayLanguageSelector": false
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlERTNDM0ZBQTY5NUY4RTEKUldUaCtKV20rc1BqbllRazErZFRseXJZTWtHK3pSS2VCMGlMWFRKWm4yY3U0VlRWV3d2bVI2dXcK",
+      "endpoints": [
+        "https://github.com/iOSDevSK/html2wp-desktop-releases/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}
