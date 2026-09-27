@@ -26,7 +26,12 @@ if errorlevel 1 goto failed
 echo [3/4] The html2wp plugin is fetched by the app from GitHub; nothing to verify here.
 
 echo [4/4] Building the application and NSIS installer...
-call npm.cmd run bundle:windows
+if defined TAURI_SIGNING_PRIVATE_KEY (
+  call npm.cmd run bundle:windows
+) else (
+  echo No Tauri updater signing key: building a local unsigned installer.
+  call npm.cmd run bundle:windows:local
+)
 if errorlevel 1 goto failed
 
 if not exist "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\*-setup.exe" goto failed

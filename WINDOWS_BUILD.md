@@ -39,17 +39,17 @@ cd C:\dev\html2wp-windows-source-1.0.16
 .\build-windows.cmd
 ```
 
-Skript pripraví Rust target, spustí `npm ci` a vytvorí inštalátor. Pri chybe sa zastaví. Prvý build potrebuje internet na stiahnutie závislostí a nástrojov a môže trvať niekoľko minút.
+Skript pripraví Rust target, spustí `npm ci` a vytvorí inštalátor. Bez `TAURI_SIGNING_PRIVATE_KEY` vytvorí lokálny inštalátor bez aktualizačného podpisu; GitHub Actions podpisuje vydávací build. Pri chybe sa zastaví. Prvý build potrebuje internet na stiahnutie závislostí a nástrojov a môže trvať niekoľko minút.
 
 Rovnaký postup ručne:
 
 ```powershell
 rustup target add x86_64-pc-windows-msvc
 npm.cmd ci
-npm.cmd run bundle:windows
+npm.cmd run bundle:windows:local
 ```
 
-`bundle:windows` zostaví frontend a spustí Tauri pre `x86_64-pc-windows-msvc` s NSIS a uzamknutými Cargo závislosťami. Plugin sa pri štarte aplikácie sťahuje z GitHubu; do inštalátora sa nepribaľuje.
+`bundle:windows:local` zostaví frontend a spustí Tauri pre `x86_64-pc-windows-msvc` s NSIS a uzamknutými Cargo závislosťami. `bundle:windows` navyše vytvorí podpísaný updater artifact, ak je nastavený vydávací podpisový kľúč. Plugin sa pri štarte aplikácie sťahuje z GitHubu; do inštalátora sa nepribaľuje.
 
 ## 3. Kde nájdeš výsledok
 

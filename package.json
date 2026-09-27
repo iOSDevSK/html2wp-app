@@ -12,11 +12,12 @@
     "desktop": "tauri dev",
     "bundle:mac": "tauri build --target aarch64-apple-darwin --bundles app,dmg",
     "test": "vitest run",
-    "test:runtime": "python3 -m unittest discover -s tests -p 'test_*.py'",
+    "test:runtime": "python3 -m unittest discover -s tests -p \"test_*.py\"",
     "prepare:runtime": "node scripts/prepare-runtime.mjs",
     "schema:codex": "codex app-server generate-ts --experimental --out schemas/codex",
     "test:ui": "npm run build && playwright test",
     "bundle:windows": "tauri build --target x86_64-pc-windows-msvc --bundles nsis -- --locked",
+    "bundle:windows:local": "tauri build --target x86_64-pc-windows-msvc --bundles nsis --config src-tauri/tauri.windows-local.conf.json -- --locked",
     "version:set": "node scripts/version.mjs",
     "version:check": "node scripts/version.mjs --check"
   },
