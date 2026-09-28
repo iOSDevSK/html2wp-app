@@ -953,9 +953,8 @@ pub(crate) async fn start_turn(
     if p.archived { return Err("Restore this project to the workspace before continuing".into()); }
     let account = rpc.request("account/read", json!({})).await?;
     if account["account"].is_null() { return Err("Connect your ChatGPT account first".into()); }
-    if let Ok(limits) = rpc.request("account/rateLimits/read", json!({})).await {
-        if limits["ordinaryUsageAllowed"] == false { return Err("Codex reports that included usage is currently unavailable. Review your account before continuing.".into()); }
-    }
+    // Included plan usage may be exhausted while Codex usage credits are still
+    // available. Let turn/start decide whether this account can run the turn.
     let catalog = models::catalog(&rpc).await?;
     // Each project keeps its own model; one without a choice yet takes the
     // Settings default once and keeps it, so a later change of the default

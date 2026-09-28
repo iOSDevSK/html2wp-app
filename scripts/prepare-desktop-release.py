@@ -109,7 +109,7 @@ def main():
     for source, name in names.items():
         shutil.copy2(source, OUT / name)
     manifest = {'version': VERSION,
-                'notes': 'Cloudflare Pages removal now shows one clear action instead of a duplicate label.',
+                'notes': 'Codex usage credits can continue conversions after the included plan allowance is exhausted.',
                 'platforms': {'darwin-aarch64': {
                     'url': f'https://github.com/{REPO}/releases/download/v{VERSION}/{ARCHIVE.name}',
                     'signature': SIGNATURE.read_text().strip()}}}
