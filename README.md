@@ -4,7 +4,7 @@ Tauri 2 desktop application with a React interface, a Rust host and Codex App Se
 
 This is the desktop app's [source repository](https://github.com/iOSDevSK/html2wp-app). `main` carries shared code; `macos`, `windows` and `linux` are platform development branches. A branch does not imply that its native build has been validated.
 
-**macOS stable: 1.0.16 · Windows Preview: 1.0.17.** The contract with the plugin is the plugin's `docs/APP-CONTRACT.md`.
+**macOS stable: 1.0.16 · Windows Preview: 1.0.18.** The contract with the plugin is the plugin's `docs/APP-CONTRACT.md`.
 
 ## Licence
 

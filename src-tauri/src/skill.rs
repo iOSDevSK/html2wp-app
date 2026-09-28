@@ -127,13 +127,16 @@ pub fn container_args(name: &str, image: &str, project: &Path, target: &str, plu
 }
 fn container_args_mapped(name: &str, image: &str, project: &Path, daemon: &str, target: &str, plugin: &crate::plugin::Plugin) -> Vec<String> {
     let host = project.display().to_string();
+    let host_identity = crate::project_paths::host_identity(project).unwrap_or_default();
     let env = [
         format!("H2WP_TARGET={target}"), format!("H2WP_WORKSPACE={PROJECT}/workspace"), format!("H2WP_OUTPUT_DIR={PROJECT}/out"),
         "H2WP_HOST=codex".into(), format!("H2WP_CONTAINER={name}"), "H2WP_STRICT_JOBS=1".into(),
         // The sandbox's copies: under the same-path mount, so the host's Docker finds them.
         format!("TMPDIR={daemon}/.tmp"), "HOME=/home/agent".into(),
     ];
-    ["create", "--name", name, "--label", "dev.html2wp.desktop=true", "--label", LAYOUT, "--init",
+    ["create", "--name", name, "--label", "dev.html2wp.desktop=true", "--label", LAYOUT,
+        "--label", &format!("{}={daemon}", crate::project_paths::DAEMON_PATH_LABEL),
+        "--label", &format!("{}={host_identity}", crate::project_paths::HOST_PATH_LABEL), "--init",
         "--security-opt", "no-new-privileges", "--pids-limit", "2048", "--memory", "8g", "--shm-size", "1g",
         // The plugin's preview WordPress and its build sandbox use the host's
         // Docker: the socket is mounted and the agent user is in its group.
@@ -151,7 +154,7 @@ fn container_args_mapped(name: &str, image: &str, project: &Path, daemon: &str, 
         .collect()
 }
 /// The container's layout; a container made for another one is made again.
-const LAYOUT: &str = "dev.html2wp.layout=same-path-2";
+const LAYOUT: &str = "dev.html2wp.layout=same-path-3";
 /// The project's container, made from `image` (the installed runtime): one
 /// made from an older runtime, or for another layout, is made again; the
 /// project stays in its folder and the preview WordPress keeps running.
@@ -169,7 +172,10 @@ pub async fn ensure_container(store: &crate::store::Store, p: &Project, image: &
         let found = docker(&["inspect".into(), "--format".into(), "{{index .Config.Labels \"dev.html2wp.layout\"}}|{{.State.Running}}".into(), name.clone()], None, 10).await?;
         let mut parts = found.trim().split('|');
         let (layout, running) = (parts.next().unwrap_or(""), parts.next() == Some("true"));
-        if crate::runtime::is_outdated(&name, image, Some(&plugin.commit)).await || Some(layout) != LAYOUT.split('=').nth(1) { docker(&["rm".into(), "-f".into(), name.clone()], None, 30).await?; }
+        if crate::runtime::is_outdated(&name, image, Some(&plugin.commit)).await
+            || Some(layout) != LAYOUT.split('=').nth(1)
+            || !paths.agent_is_proven(&name).await
+        { docker(&["rm".into(), "-f".into(), name.clone()], None, 30).await?; }
         else { was_running = running; }
     }
     if docker(&inspect, None, 10).await.is_err() {
@@ -196,7 +202,22 @@ pub async fn ensure_container(store: &crate::store::Store, p: &Project, image: &
         // /project names the Linux daemon path. Nested Docker bind mounts of
         // TMPDIR must resolve to the same app-owned files on the host.
         docker(&["exec".into(), "--user".into(), "0".into(), name.clone(), "sh".into(), "-c".into(), "[ -L /project ] || [ ! -e /project ] || exit 1; ln -sfn \"$1\" /project".into(), "sh".into(), paths.daemon.clone()], None, 30).await?;
-        paths.verify_agent(&name, image).await?;
+        if let Err(failure) = paths.verify_agent(&name, image).await {
+            // A failed path proof must never become reusable on the next
+            // attempt merely because its container is already running.
+            let cleanup = docker(&["rm".into(), "-f".into(), name.clone()], None, 30).await;
+            if let Err(cleanup) = cleanup {
+                return Err(format!("{failure}. The unverified conversion container could not be removed: {cleanup}"));
+            }
+            return Err(failure);
+        }
+        if let Err(failure) = paths.mark_agent_proven(&name).await {
+            let cleanup = docker(&["rm".into(), "-f".into(), name.clone()], None, 30).await;
+            if let Err(cleanup) = cleanup {
+                return Err(format!("{failure}. The unverified conversion container could not be removed: {cleanup}"));
+            }
+            return Err(failure);
+        }
     }
     // The licence the owner saved in Settings, or none (Free), as it is now.
     let licence = std::fs::read(store.root.join("private/licence")).ok();
@@ -722,6 +743,9 @@ pub(crate) mod tests {
         assert!(mounts.contains(&format!("type=bind,source={},target={daemon}", host.display()).as_str()));
         assert!(mounts.contains(&format!("type=bind,source={},target={daemon}/input,readonly", host.join("input").display()).as_str()));
         assert!(mounts.contains(&format!("type=bind,source={},target={daemon}/artifacts,readonly", host.join("artifacts").display()).as_str()));
+        let labels = values("--label");
+        assert!(labels.contains(&format!("{}={daemon}", crate::project_paths::DAEMON_PATH_LABEL).as_str()));
+        assert!(labels.iter().any(|label| label.starts_with(&format!("{}=", crate::project_paths::HOST_PATH_LABEL))));
     }
     #[test]
     fn the_prompts_are_the_contract_s_for_an_html_theme_and_an_astro_project() {

@@ -35,7 +35,7 @@ rustup override set stable-x86_64-pc-windows-msvc
 Rozbaľ celý ZIP napríklad do `C:\dev`. Otvor adresár, v ktorom je `package.json` a `build-windows.cmd`:
 
 ```powershell
-cd C:\dev\html2wp-windows-source-1.0.17
+cd C:\dev\html2wp-windows-source-1.0.18
 .\build-windows.cmd
 ```
 
