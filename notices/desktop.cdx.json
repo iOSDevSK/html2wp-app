@@ -7,7 +7,7 @@
     "component": {
       "type": "application",
       "name": "html2wp Desktop",
-      "version": "1.0.18"
+      "version": "1.0.19"
     },
     "properties": [
       {
