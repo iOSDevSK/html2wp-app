@@ -65,7 +65,7 @@ def main():
         shutil.copy2(item, out / item.name)
     feed = {
         'version': VERSION,
-        'notes': 'Signed by BELNEM s.r.o. (Authenticode, timestamped): Windows names the publisher instead of "Unknown publisher".',
+        'notes': 'Deleting a project removes all its preview WordPress containers, including those of earlier runs; projects with a preview from an older version can be deleted and their preview started again.',
         'platforms': {'windows-x86_64': {
             'url': f'https://github.com/{REPO}/releases/download/v{VERSION}/{installer.name}',
             'signature': signature.read_text().strip(),

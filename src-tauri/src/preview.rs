@@ -154,6 +154,9 @@ struct Claim {
     state_path: PathBuf,
     agent: String,
     daemon_project: String,
+    /// No other project's workspace records this Compose project (`owned`
+    /// checks); what lets an unlabelled legacy preview be attributed.
+    unique_claim: bool,
 }
 
 fn owner_identity(workspace: &Path, agent: &str) -> Result<String> {
@@ -253,6 +256,7 @@ fn claim_with_daemon(workspace: &Path, project_id: &str, state: &PreviewState, d
         state_path: canonical_state,
         agent,
         daemon_project,
+        unique_claim: false,
     })
 }
 
@@ -401,7 +405,6 @@ fn prove(c: &Claim, r: &Resources) -> Result<Proof> {
         c.state_path.file_name().unwrap().to_string_lossy()
     );
     let mut owners = Vec::new();
-    let mut paths = Vec::new();
     let mut container_names = Vec::new();
     let mut container_ids = Vec::new();
     for row in &r.containers {
@@ -419,7 +422,6 @@ fn prove(c: &Claim, r: &Resources) -> Result<Proof> {
         if path != expected_state && path != alias {
             return Err(refuse("container state label differs"));
         }
-        paths.push(path);
         owners.push(l["h2wp.owner"].as_str().unwrap_or(""));
         container_names.push(n.to_string());
         container_ids.push(docker_id(row)?);
@@ -501,19 +503,24 @@ fn prove(c: &Claim, r: &Resources) -> Result<Proof> {
         owners.iter().all(|o| *o == c.owner)
     };
     if !modern {
-        // Old runs only have a usable host identity if both service containers
-        // carry this exact, canonical host path. /project is shared by agents.
-        if !owners.iter().all(|o| o.is_empty())
-            || container_names.len() != 2
-            || paths.iter().any(|p| *p != expected_state)
-            || expected_state.starts_with("/project/")
-            || cfg!(windows)
-        {
+        // Runs from before the plugin labelled an owner. test-env.sh names
+        // the Compose project h2wp-<slug>-<random run id> and records it in
+        // this workspace's state file; the resources above all carry that
+        // project and this state file's path. That is unambiguous once no
+        // other project's workspace records the same project. With nothing
+        // left in Docker there is nothing to protect.
+        if owners.iter().any(|o| !o.is_empty()) {
+            return Err(refuse("legacy preview mixes owner-labelled and unlabelled resources"));
+        }
+        let nothing_left =
+            container_names.is_empty() && volume_names.is_empty() && network.is_none();
+        if !nothing_left && !c.unique_claim {
             return Err(refuse(
-                "legacy preview has no unambiguous host ownership label",
+                "another project's state file names the same legacy preview",
             ));
         }
     }
+
     if !c.state_path.is_file() {
         return Err(refuse("state file disappeared"));
     }
@@ -533,10 +540,26 @@ async fn owned(store: &Store, p: &Project, state: &PreviewState) -> Result<Proof
     if paths.host != dunce::canonicalize(project).map_err(|_| refuse("project path changed"))? {
         return Err(refuse("Docker project path changed"));
     }
-    let c = claim_with_daemon(&workspace, &p.id, state, Some(&paths.daemon))?;
+    let mut c = claim_with_daemon(&workspace, &p.id, state, Some(&paths.daemon))?;
+    c.unique_claim = !claimed_elsewhere(store, &p.id, &c.project);
     let r = resources(&c).await?;
     prove(&c, &r)
 }
+/// Whether any other project's workspace has a state file naming `project`.
+/// Unreadable project lists count as claimed: the check fails closed.
+fn claimed_elsewhere(store: &Store, id: &str, project: &str) -> bool {
+    let Ok(projects) = store.projects() else {
+        return true;
+    };
+    projects.iter().filter(|other| other.id != id).any(|other| {
+        store.path(&other.id).is_ok_and(|root| {
+            state_files(&root.join("workspace"))
+                .iter()
+                .any(|s| s.value["project"] == project)
+        })
+    })
+}
+
 
 pub async fn action(store: &Store, p: &Project, action: &str) -> Result<Value> {
     let verb = match action {
@@ -636,8 +659,95 @@ pub async fn remove(store: &Store, p: &Project) -> Result<()> {
             crate::runtime::docker(&strs(&["network", "rm", &network]), None, 60).await?;
         }
     }
+    sweep_owner(store, p).await
+}
+
+/// Every preview resource labelled with this project's owner, from any run.
+/// An earlier run whose state file was replaced or removed has no other link
+/// to the project and would stay in Docker for good. The owner label is a hash
+/// of this workspace (as Docker Desktop sees it) and its agent, so it names
+/// this project's runs only. Without a verifiable Docker path there is no
+/// owner to look for, and nothing is swept.
+async fn sweep_owner(store: &Store, p: &Project) -> Result<()> {
+    let root = store.path(&p.id)?;
+    if !root.join("workspace").is_dir() {
+        return Ok(());
+    }
+    let Ok(paths) = crate::project_paths::ProjectPaths::discover(&root, &p.runtime_image).await else {
+        return Ok(());
+    };
+    let agent = format!("h2wpd-{}-agent", p.id);
+    let workspace = format!("{}/workspace", paths.daemon);
+    sweep(&owner_identity(Path::new(&workspace), &agent)?, &agent).await
+}
+async fn sweep(owner: &str, agent: &str) -> Result<()> {
+    let filter = vec!["--filter".to_string(), format!("label=h2wp.owner={owner}")];
+    let mut run = |args: Vec<String>| async move { crate::runtime::docker(&args, None, 20).await };
+    let ours = |row: &Value, container: bool| {
+        let l = labels(row, container);
+        l["h2wp.owner"] == owner
+            && l["com.docker.compose.project"].as_str().is_some_and(plugin_project)
+    };
+    let stop = |what: &str| format!("Preview cleanup stopped: {what}; review it in Docker Desktop.");
+    // Inspect the whole set before removing anything.
+    let containers = inspect_with(
+        "container",
+        &listed(&run([strs(&["ps", "-a"]), filter.clone(), strs(&["--format", "{{.Names}}"])].concat()).await?),
+        &mut run,
+    )
+    .await?;
+    let networks = inspect_with(
+        "network",
+        &listed(&run([strs(&["network", "ls"]), filter.clone(), strs(&["--format", "{{.Name}}"])].concat()).await?),
+        &mut run,
+    )
+    .await?;
+    let volumes = inspect_with(
+        "volume",
+        &listed(&run([strs(&["volume", "ls"]), filter.clone(), strs(&["--format", "{{.Name}}"])].concat()).await?),
+        &mut run,
+    )
+    .await?;
+    if !containers.iter().all(|r| ours(r, true))
+        || !networks.iter().all(|r| ours(r, false))
+        || !volumes.iter().all(|r| ours(r, false))
+    {
+        return Err(stop("a resource carrying this project's owner label is not a plugin preview"));
+    }
+    let container_ids = containers.iter().map(docker_id).collect::<Result<Vec<_>>>()?;
+    let mut detach = Vec::new();
+    for row in &networks {
+        if let Some(attached) = row["Containers"].as_object() {
+            for (id, a) in attached {
+                if container_ids.contains(id) {
+                    continue;
+                }
+                if a["Name"] != agent {
+                    return Err(stop("another container is attached to an old preview network"));
+                }
+                detach.push((docker_id(row)?, id.clone()));
+            }
+        } else if !row["Containers"].is_null() {
+            return Err(stop("old preview network attachments could not be read"));
+        }
+    }
+    if !container_ids.is_empty() {
+        crate::runtime::docker(&[strs(&["rm", "-f"]), container_ids].concat(), None, 90).await?;
+    }
+    for (network, container) in &detach {
+        crate::runtime::docker(&strs(&["network", "disconnect", "-f", network, container]), None, 30)
+            .await?;
+    }
+    for row in &networks {
+        crate::runtime::docker(&strs(&["network", "rm", &docker_id(row)?]), None, 60).await?;
+    }
+    let volume_names: Vec<String> = volumes.iter().filter_map(|v| name(v).map(str::to_string)).collect();
+    if !volume_names.is_empty() {
+        crate::runtime::docker(&[strs(&["volume", "rm"]), volume_names].concat(), None, 60).await?;
+    }
     Ok(())
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -841,47 +951,93 @@ mod tests {
         );
     }
     #[cfg(not(windows))]
-    #[test]
-    fn legacy_requires_two_containers_with_the_canonical_host_state_path() {
-        let (_dir, _id, _state, c, mut r) = fixture();
-        for row in &mut r.containers {
-            row["Config"]["Labels"]
-                .as_object_mut()
-                .unwrap()
-                .remove("h2wp.owner");
-            row["Config"]["Labels"]["h2wp.state"] = json!(c.state_path);
-        }
-        for row in &mut r.volumes {
-            row["Labels"].as_object_mut().unwrap().remove("h2wp.owner");
-        }
-        r.networks[0]["Labels"]
-            .as_object_mut()
-            .unwrap()
-            .remove("h2wp.owner");
-        assert!(prove(&c, &r).is_ok());
-        r.containers[0]["Config"]["Labels"]["h2wp.state"] =
-            json!("/project/workspace/.test-env-maison.json");
-        assert!(prove(&c, &r).is_err());
-        r.containers[0]["Config"]["Labels"]["h2wp.state"] = json!(c.state_path);
-        r.containers.pop();
-        assert!(prove(&c, &r).is_err());
-    }
-    #[cfg(windows)]
-    #[test]
-    fn legacy_preview_without_owner_labels_is_not_trusted_on_windows() {
-        let (_dir, _id, _state, c, mut r) = fixture();
-        let daemon_state = format!("{}/workspace/{}", c.daemon_project,
-            c.state_path.file_name().unwrap().to_string_lossy());
+    fn legacy(r: &mut Resources, state_label: &str) {
         for row in &mut r.containers {
             row["Config"]["Labels"].as_object_mut().unwrap().remove("h2wp.owner");
-            row["Config"]["Labels"]["h2wp.state"] = json!(daemon_state);
+            row["Config"]["Labels"]["h2wp.state"] = json!(state_label);
         }
         for row in &mut r.volumes {
             row["Labels"].as_object_mut().unwrap().remove("h2wp.owner");
         }
         r.networks[0]["Labels"].as_object_mut().unwrap().remove("h2wp.owner");
-        assert!(prove(&c, &r).err().is_some_and(|e|
-            e.contains("legacy preview has no unambiguous host ownership label")));
+    }
+    #[test]
+    fn legacy_preview_is_attributed_when_no_other_project_records_it() {
+        let (_dir, _id, _state, mut c, mut r) = fixture();
+        c.state_owner = false;
+        legacy(&mut r, "/project/workspace/.test-env-maison.json");
+        assert!(prove(&c, &r).is_err(), "another workspace may record the same run");
+        c.unique_claim = true;
+        let proof = prove(&c, &r).unwrap();
+        assert_eq!((proof.containers.len(), proof.volumes.len()), (2, 2));
+        r.containers.pop();
+        r.networks[0]["Containers"].as_object_mut().unwrap().remove(&"b".repeat(64));
+        assert_eq!(prove(&c, &r).unwrap().containers.len(), 1, "a half-removed run is still ours");
+        let state_path = format!("{}/workspace/{}", c.daemon_project, c.state_path.file_name().unwrap().to_string_lossy());
+        r.containers[0]["Config"]["Labels"]["h2wp.state"] = json!(state_path);
+        assert!(prove(&c, &r).is_ok(), "the host path label of older runs too");
+        r.containers[0]["Config"]["Labels"]["h2wp.state"] = json!("/project/workspace/.test-env-other.json");
+        assert!(prove(&c, &r).is_err(), "another state file's run is not ours");
+        r.containers[0]["Config"]["Labels"]["h2wp.state"] = json!(state_path);
+        r.volumes[0]["Labels"]["h2wp.owner"] = json!(c.owner);
+        assert!(prove(&c, &r).is_err(), "labelled and unlabelled resources mixed");
+    }
+    #[test]
+    fn legacy_preview_with_nothing_left_needs_no_proof() {
+        let (_dir, _id, _state, mut c, _r) = fixture();
+        c.state_owner = false;
+        let proof = prove(&c, &Resources::default()).unwrap();
+        assert!(proof.containers.is_empty() && proof.volumes.is_empty() && proof.network.is_none());
+    }
+    #[test]
+    fn a_run_recorded_by_another_project_is_claimed_elsewhere() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path().to_path_buf()).unwrap();
+        let mut a = crate::skill::tests::project();
+        let mut b = a.clone();
+        a.id = uuid::Uuid::new_v4().to_string();
+        b.id = uuid::Uuid::new_v4().to_string();
+        store.put(&a).unwrap();
+        store.put(&b).unwrap();
+        let write = |id: &str, project: &str| {
+            let workspace = store.path(id).unwrap().join("workspace");
+            std::fs::create_dir_all(&workspace).unwrap();
+            std::fs::write(workspace.join(".test-env-maison.json"),
+                json!({"slug":"maison","project":project}).to_string()).unwrap();
+        };
+        write(&a.id, "h2wp-maison-abcdef");
+        write(&b.id, "h2wp-maison-123456");
+        assert!(!claimed_elsewhere(&store, &a.id, "h2wp-maison-abcdef"));
+        write(&b.id, "h2wp-maison-abcdef");
+        assert!(claimed_elsewhere(&store, &a.id, "h2wp-maison-abcdef"));
+    }
+    #[tokio::test]
+    #[ignore = "real Docker; set H2WP_TEST_SWEEP_IMAGE to any local image"]
+    async fn sweep_removes_every_run_labelled_with_this_owner_and_nothing_else() {
+        let Ok(image) = std::env::var("H2WP_TEST_SWEEP_IMAGE") else { return };
+        let run = uuid::Uuid::new_v4().simple().to_string();
+        let owner = format!("{run}{run}");
+        let project = format!("h2wp-sweep-{}", &run[..6]);
+        let docker = |a: &[&str]| {
+            let args = strs(a);
+            async move { crate::runtime::docker(&args, None, 60).await }
+        };
+        let mine = [format!("label=com.docker.compose.project={project}"), format!("label=h2wp.owner={owner}")];
+        let lp = format!("com.docker.compose.project={project}");
+        let lo = format!("h2wp.owner={owner}");
+        let (net, vol, foreign) = (format!("{project}_default"), format!("{project}_wp_data"), format!("{project}_foreign"));
+        docker(&["network", "create", "--label", &lp, "--label", &lo, &net]).await.unwrap();
+        docker(&["volume", "create", "--label", &lp, "--label", &lo, &vol]).await.unwrap();
+        docker(&["volume", "create", "--label", &lp, "--label", "h2wp.owner=someone-else", &foreign]).await.unwrap();
+        docker(&["create", "--name", &format!("{project}-wp-1"), "--label", &lp, "--label", &lo,
+            "--network", &net, "-v", &format!("{vol}:/data"), &image]).await.unwrap();
+        sweep(&owner, "h2wpd-none-agent").await.unwrap();
+        for kind in [vec!["ps", "-a"], vec!["volume", "ls"], vec!["network", "ls"]] {
+            let left = docker(&[kind.clone(), vec!["-q", "--filter", &mine[1]]].concat()).await.unwrap();
+            assert!(left.trim().is_empty(), "{kind:?} still has {left}");
+        }
+        assert!(docker(&["volume", "ls", "-q", "--filter", &mine[0]]).await.unwrap().contains(&foreign));
+        docker(&["volume", "rm", &foreign]).await.unwrap();
     }
     #[test]
     fn only_the_plugin_s_own_preview_on_this_computer_is_touched() {
