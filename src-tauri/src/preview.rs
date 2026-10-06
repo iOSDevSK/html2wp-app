@@ -1030,7 +1030,13 @@ mod tests {
         docker(&["volume", "create", "--label", &lp, "--label", "h2wp.owner=someone-else", &foreign]).await.unwrap();
         docker(&["create", "--name", &format!("{project}-wp-1"), "--label", &lp, "--label", &lo,
             "--network", &net, "-v", &format!("{vol}:/data"), &image]).await.unwrap();
-        sweep(&owner, "h2wpd-none-agent").await.unwrap();
+        // This project's agent stays attached to an old preview network.
+        let agent = format!("h2wpd-{run}-agent");
+        docker(&["create", "--name", &agent, "--network", &net, &image]).await.unwrap();
+        sweep(&owner, &agent).await.unwrap();
+        assert!(!docker(&["ps", "-a", "-q", "--filter", &format!("name=^{agent}$")]).await.unwrap().trim().is_empty(),
+            "the agent is detached, not removed");
+        docker(&["rm", "-f", &agent]).await.unwrap();
         for kind in [vec!["ps", "-a"], vec!["volume", "ls"], vec!["network", "ls"]] {
             let left = docker(&[kind.clone(), vec!["-q", "--filter", &mine[1]]].concat()).await.unwrap();
             assert!(left.trim().is_empty(), "{kind:?} still has {left}");
