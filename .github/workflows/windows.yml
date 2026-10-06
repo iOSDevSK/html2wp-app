@@ -47,7 +47,7 @@ jobs:
         name: Prepare Artifact Signing
         shell: pwsh
         env:
-          # docs/windows-signing.md: the account can be deleted between releases
+          # The account can be deleted between releases (owner notes)
           # and recreated; if its name cannot be reused, set these variables.
           SIGNING_ENDPOINT: ${{ vars.ARTIFACT_SIGNING_ENDPOINT || 'https://neu.codesigning.azure.net' }}
           SIGNING_ACCOUNT: ${{ vars.ARTIFACT_SIGNING_ACCOUNT || 'html2wpsigning' }}
