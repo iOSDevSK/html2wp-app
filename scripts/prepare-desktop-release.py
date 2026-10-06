@@ -109,7 +109,7 @@ def main():
     for source, name in names.items():
         shutil.copy2(source, OUT / name)
     manifest = {'version': VERSION,
-                'notes': 'Codex usage credits can continue conversions after the included plan allowance is exhausted.',
+                'notes': 'Signed with Developer ID and notarized by Apple: macOS opens html2wp without a security warning.',
                 'platforms': {'darwin-aarch64': {
                     'url': f'https://github.com/{REPO}/releases/download/v{VERSION}/{ARCHIVE.name}',
                     'signature': SIGNATURE.read_text().strip()}}}
