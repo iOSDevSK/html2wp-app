@@ -950,7 +950,6 @@ mod tests {
             "an orphan volume still needs owner proof"
         );
     }
-    #[cfg(not(windows))]
     fn legacy(r: &mut Resources, state_label: &str) {
         for row in &mut r.containers {
             row["Config"]["Labels"].as_object_mut().unwrap().remove("h2wp.owner");
