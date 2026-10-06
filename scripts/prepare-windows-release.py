@@ -65,7 +65,7 @@ def main():
         shutil.copy2(item, out / item.name)
     feed = {
         'version': VERSION,
-        'notes': 'Windows Preview: native build and tests passed. Docker Desktop conversion and updater installation still need a Windows smoke test.',
+        'notes': 'Signed by BELNEM s.r.o. (Authenticode, timestamped): Windows names the publisher instead of "Unknown publisher".',
         'platforms': {'windows-x86_64': {
             'url': f'https://github.com/{REPO}/releases/download/v{VERSION}/{installer.name}',
             'signature': signature.read_text().strip(),
