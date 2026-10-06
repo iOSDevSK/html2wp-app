@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  id-token: write
 jobs:
   windows:
     runs-on: windows-2022
@@ -33,12 +34,83 @@ jobs:
       - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
       - if: github.event_name == 'pull_request'
         run: npm run bundle:windows:local
+      # Authenticode: Azure Artifact Signing as BELNEM s.r.o. Azure trusts this
+      # repository's `windows` branch through OIDC (no stored secret); pull
+      # requests get no token and build unsigned above.
       - if: github.event_name != 'pull_request'
-        run: npm run bundle:windows
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - if: github.event_name != 'pull_request'
+        name: Prepare Artifact Signing
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'artifact-signing'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          $packages = @(
+            @{ Id = 'microsoft.windows.sdk.buildtools'; Version = '10.0.28000.2705' },
+            @{ Id = 'microsoft.artifactsigning.client'; Version = '1.0.128' }
+          )
+          foreach ($p in $packages) {
+            $zip = Join-Path $root "$($p.Id).zip"
+            Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/$($p.Id)/$($p.Version)/$($p.Id).$($p.Version).nupkg" -OutFile $zip
+            Expand-Archive -Path $zip -DestinationPath (Join-Path $root $p.Id) -Force
+          }
+          $signtool = Join-Path $root 'microsoft.windows.sdk.buildtools\bin\10.0.28000.0\x64\signtool.exe'
+          $dlib = Join-Path $root 'microsoft.artifactsigning.client\bin\x64\Azure.CodeSigning.Dlib.dll'
+          $metadata = Join-Path $root 'metadata.json'
+          @{
+            Endpoint = 'https://neu.codesigning.azure.net'
+            CodeSigningAccountName = 'html2wpsigning'
+            CertificateProfileName = 'html2wp'
+            CorrelationId = "github-run-$env:GITHUB_RUN_ID"
+            ExcludeCredentials = @('EnvironmentCredential', 'WorkloadIdentityCredential', 'ManagedIdentityCredential',
+              'SharedTokenCacheCredential', 'VisualStudioCredential', 'VisualStudioCodeCredential',
+              'AzurePowerShellCredential', 'AzureDeveloperCliCredential', 'InteractiveBrowserCredential')
+          } | ConvertTo-Json | Set-Content -Path $metadata -Encoding utf8
+          $config = Join-Path $root 'tauri.sign.conf.json'
+          @{ bundle = @{ windows = @{ signCommand = @{
+            cmd = 'powershell.exe'
+            args = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+              (Join-Path $env:GITHUB_WORKSPACE 'scripts\sign-windows.ps1'), '%1')
+          } } } } | ConvertTo-Json -Depth 6 | Set-Content -Path $config -Encoding utf8
+          "ARTIFACT_SIGNING_SIGNTOOL=$signtool" >> $env:GITHUB_ENV
+          "ARTIFACT_SIGNING_DLIB=$dlib" >> $env:GITHUB_ENV
+          "ARTIFACT_SIGNING_METADATA=$metadata" >> $env:GITHUB_ENV
+          "TAURI_SIGN_CONFIG=$config" >> $env:GITHUB_ENV
+      - if: github.event_name != 'pull_request'
+        shell: pwsh
+        run: npx tauri build --target x86_64-pc-windows-msvc --bundles nsis --config "$env:TAURI_SIGN_CONFIG" -- --locked
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
-      - uses: actions/upload-artifact@v4
+      # The installer, the app and the uninstaller must carry a valid, timestamped
+      # BELNEM signature. NSIS's own plugin DLLs ($PLUGINSDIR) are not ours and Tauri
+      # does not sign them; they are listed for the Store review, not failed.
+      - if: github.event_name != 'pull_request'
+        name: Verify signatures
+        shell: pwsh
+        run: |
+          $dir = 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis'
+          $setup = Get-ChildItem $dir -Filter '*-setup.exe' | Select-Object -First 1
+          if (-not $setup) { throw 'No NSIS installer was built' }
+          $out = Join-Path $env:RUNNER_TEMP 'installer-contents'
+          7z x $setup.FullName "-o$out" -y | Out-Null
+          $files = @($setup) + @(Get-ChildItem $out -Recurse -Include '*.exe', '*.dll')
+          $failed = @()
+          foreach ($f in $files) {
+            $s = Get-AuthenticodeSignature -FilePath $f.FullName
+            $ts = if ($s.TimeStamperCertificate) { 'timestamped' } else { 'no timestamp' }
+            $plugin = $f.FullName -match '\$PLUGINSDIR'
+            Write-Host ("{0,-6} {1,-14} {2,-12} {3}  {4}" -f $(if ($plugin) { 'plugin' } else { 'ours' }), $s.Status, $ts, $f.Name, $s.SignerCertificate.Subject)
+            if (-not $plugin -and ($s.Status -ne 'Valid' -or -not $s.TimeStamperCertificate -or $s.SignerCertificate.Subject -notmatch 'BELNEM')) { $failed += $f.Name }
+          }
+          if (-not ($files | Where-Object { $_.Name -eq 'html2wp.exe' })) { Write-Warning '7-Zip did not surface html2wp.exe; only the installer was checked' }
+          if ($failed) { throw "Not signed by BELNEM s.r.o. with a timestamp: $($failed -join ', ')" }
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
         with:
           name: html2wp-windows-x64
           path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/
