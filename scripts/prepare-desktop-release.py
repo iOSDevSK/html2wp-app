@@ -109,7 +109,7 @@ def main():
     for source, name in names.items():
         shutil.copy2(source, OUT / name)
     manifest = {'version': VERSION,
-                'notes': 'Signed with Developer ID and notarized by Apple: macOS opens html2wp without a security warning.',
+                'notes': 'Deleting a project removes all its preview WordPress containers, including those of earlier runs; projects with a preview from an older version can be deleted and their preview started again.',
                 'platforms': {'darwin-aarch64': {
                     'url': f'https://github.com/{REPO}/releases/download/v{VERSION}/{ARCHIVE.name}',
                     'signature': SIGNATURE.read_text().strip()}}}
