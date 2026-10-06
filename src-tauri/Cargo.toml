@@ -1,6 +1,6 @@
 [package]
 name = "html2wp-desktop"
-version = "1.0.19"
+version = "1.0.21"
 description = "A considered workspace for HTML to WordPress conversion"
 authors = ["BELNEM s.r.o."]
 license-file = "../LICENSE"
