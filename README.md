@@ -1,10 +1,12 @@
 # html2wp Desktop
 
+Website, documentation and pricing: [html2wp.dev](https://html2wp.dev). Signed downloads for Mac and Windows: [latest release](https://github.com/iOSDevSK/html2wp-desktop-releases/releases/latest).
+
 Tauri 2 desktop application with a React interface, a Rust host and Codex App Server. Since 1.0.0 the app is only the interface: the html2wp plugin (its skill) owns the whole conversion, and the app starts it, shows its progress and saves what it delivered. The UI is in English.
 
 This is the desktop app's [source repository](https://github.com/iOSDevSK/html2wp-app). `main` carries shared code; `macos`, `windows` and `linux` are platform development branches. A branch does not imply that its native build has been validated.
 
-**Current macOS desktop release: 1.0.20.** The contract with the plugin is the plugin's `docs/APP-CONTRACT.md`.
+**Current desktop release: 1.0.22** (macOS signed and notarized, Windows signed). The contract with the plugin is the plugin's `docs/APP-CONTRACT.md`.
 
 ## Licence
 
